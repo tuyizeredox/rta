@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { SESSION_COOKIE_NAME } from "@/lib/auth/jwt";
+import { getEnv } from "@/lib/env";
 import { redeemQrToken } from "@/lib/auth/qr-access";
 import { sessionCookieOptions } from "@/lib/auth/session";
 import {
@@ -35,8 +36,25 @@ import {
 // Signing someone in must never be served from a cache.
 export const dynamic = "force-dynamic";
 
+/**
+ * Redirect targets are resolved against APP_URL, never against `request.url`.
+ *
+ * In a container the server binds 0.0.0.0 on the platform's port, so a route
+ * handler sees that bind address as the request origin rather than the public
+ * hostname the scanner actually reached. `NextResponse.redirect` sends an
+ * absolute Location, so resolving against it hands the phone
+ * `https://0.0.0.0:10000/...` — an address no browser can route.
+ *
+ * APP_URL is the same value the scanned code was built from in
+ * lib/auth/qr-access.ts, so the redirect lands on the host the member started
+ * on by construction.
+ */
+function absolute(path: string): URL {
+  return new URL(path, `${getEnv().APP_URL.replace(/\/+$/, "")}/`);
+}
+
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ token: string }> }
 ) {
   const { token } = await params;
@@ -49,7 +67,7 @@ export async function GET(
   // is not locked out by ordinary use.
   const limit = checkRateLimit(rateLimitKey("qr-scan", ip), RATE_LIMITS.QR_SCAN);
   if (!limit.allowed) {
-    return NextResponse.redirect(new URL("/qr-invalid?reason=throttled", request.url));
+    return NextResponse.redirect(absolute("/qr-invalid?reason=throttled"));
   }
 
   const result = await redeemQrToken(token, { ipAddress: ip, userAgent });
@@ -59,7 +77,7 @@ export async function GET(
     // it is unknown, expired or revoked tells a stranger whether they have
     // found a real one; the page covers all three cases in words the owner can
     // act on.
-    return NextResponse.redirect(new URL("/qr-invalid", request.url));
+    return NextResponse.redirect(absolute("/qr-invalid"));
   }
 
   // A forced password change outranks the convenience this feature exists for.
@@ -69,7 +87,7 @@ export async function GET(
     ? "/account/password?required=1"
     : "/account/status?via=qr";
 
-  const response = NextResponse.redirect(new URL(destination, request.url));
+  const response = NextResponse.redirect(absolute(destination));
 
   response.cookies.set(
     SESSION_COOKIE_NAME,

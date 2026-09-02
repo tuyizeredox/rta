@@ -46,6 +46,7 @@ export interface MemberFormValues {
   memberNumber: string;
   firstName: string;
   lastName: string;
+  title: string;
   phone: string;
   email: string;
   nationalId: string;
@@ -248,6 +249,25 @@ export function MemberForm({ member }: { member?: MemberFormValues }) {
 
           <Field id="lastName" label={field.lastName} required error={errors.lastName}>
             {(props) => <Input name="lastName" defaultValue={member?.lastName ?? ""} autoComplete="off" {...props} />}
+          </Field>
+
+          {/* The office printed on the membership card. Blank is the ordinary
+              case, and the card falls back to the Kinyarwanda default. */}
+          <Field
+            id="title"
+            label={field.memberTitle}
+            error={errors.title}
+            hint={d.forms.hint.memberTitle}
+          >
+            {(props) => (
+              <Input
+                name="title"
+                defaultValue={member?.title ?? ""}
+                maxLength={40}
+                autoComplete="off"
+                {...props}
+              />
+            )}
           </Field>
 
           <Field

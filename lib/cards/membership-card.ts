@@ -50,6 +50,19 @@ async function loadLogo(): Promise<Uint8Array | null> {
   }
 }
 
+/**
+ * What the line under the holder's name says when no office is recorded.
+ *
+ * KINYARWANDA, AND NOT TRANSLATED. Everything else on the card that is words
+ * rather than data — the notice on the back, the numbers to ring — is printed
+ * in Kinyarwanda, because that is the language the people carrying these cards
+ * read. Translating this one line would also make the card depend on whichever
+ * language the reader happened to have selected when they pressed download,
+ * so the same member could hold two different cards. A printed card is not a
+ * screen; it says one thing for its whole life.
+ */
+export const CARD_DEFAULT_TITLE = "Umunyamuryango";
+
 export interface MembershipCardData {
   /// Family name first — the order the printed card reads in, which is the
   /// reverse of how the app addresses someone on screen.
@@ -68,17 +81,18 @@ export interface MembershipCardData {
 /**
  * Assembles what the front of one person's card says.
  *
- * `roleLabel` is passed in rather than looked up here because it is
- * translated, and this module cannot see the request's locale. The caller — a
- * route handler already holding the dashboard copy — can.
+ * The office is whatever an administrator recorded, falling back to
+ * `CARD_DEFAULT_TITLE`. It deliberately does not consult the holder's role:
+ * everyone here is a member of the association, and the two or three people
+ * who hold an office are given one explicitly rather than inferred from what
+ * the software lets them click.
  *
  * A holder with no live QR is issued one. Printing a card around a code that
  * does not exist would produce a card nobody can scan, and the member would
  * have no way of discovering that until someone tried it.
  */
 export async function getMembershipCardData(
-  userId: string,
-  roleLabel: string
+  userId: string
 ): Promise<MembershipCardData> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -109,7 +123,7 @@ export async function getMembershipCardData(
   return {
     // "Nshimiyimana Daniel": family name, then given name.
     displayName: `${user.lastName} ${user.firstName}`.trim(),
-    title: user.title?.trim() || roleLabel,
+    title: user.title?.trim() || CARD_DEFAULT_TITLE,
     phone: toLocalPhone(user.phone),
     qrUrl: code.url,
     photo: user.avatar

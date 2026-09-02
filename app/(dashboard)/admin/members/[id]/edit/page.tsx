@@ -70,6 +70,7 @@ export default async function EditMemberPage({
           memberNumber: member.memberNumber,
           firstName: member.user.firstName,
           lastName: member.user.lastName,
+          title: member.user.title ?? "",
           phone: member.user.phone ?? "",
           email: member.user.email ?? "",
           nationalId: member.nationalId ?? "",

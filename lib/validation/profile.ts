@@ -97,6 +97,12 @@ export const updateOwnProfileSchema = selfContactSchema
       phone: true,
       email: true,
       note: true,
+      // `title` is the office printed on the membership card. The others are
+      // omitted because their wording differs between the two forms; this one
+      // is omitted because it is a claim about standing in the association. A
+      // member who could set their own would print themselves a card reading
+      // "Chairman". Only an administrator awards it.
+      title: true,
     }).shape
   )
   .superRefine(checkDistrictInProvince);

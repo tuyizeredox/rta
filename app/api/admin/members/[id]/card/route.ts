@@ -2,7 +2,6 @@ import { type NextRequest } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireApiPermission, assertSameAssociation } from "@/lib/auth/guards";
 import { PERMISSIONS } from "@/lib/auth/permissions";
-import { getDashboardCopy } from "@/lib/i18n/server";
 import { recordAudit, AUDIT_ACTIONS } from "@/lib/audit";
 import {
   getMembershipCardData,
@@ -38,7 +37,7 @@ export const GET = withErrorHandling(
         id: true,
         memberNumber: true,
         associationId: true,
-        user: { select: { id: true, role: true } },
+        user: { select: { id: true } },
       },
     });
 
@@ -60,15 +59,7 @@ export const GET = withErrorHandling(
       return new Response(new Uint8Array(await renderCardBack()), { headers });
     }
 
-    const { d } = await getDashboardCopy();
-    const roleLabel =
-      member.user.role === "SUPER_ADMIN"
-        ? d.shell.superAdmin
-        : member.user.role === "ADMIN"
-          ? d.shell.admin
-          : d.shell.member;
-
-    const data = await getMembershipCardData(member.user.id, roleLabel);
+    const data = await getMembershipCardData(member.user.id);
 
     await recordAudit(
       {

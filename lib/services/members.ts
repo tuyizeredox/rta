@@ -279,6 +279,8 @@ export async function createMember(params: {
         phone: input.phone,
         firstName: input.firstName,
         lastName: input.lastName,
+        // Usually blank at the desk; an office is normally awarded later.
+        title: input.title ?? null,
         passwordHash,
         role: "MEMBER",
         status: userStatus,
@@ -509,6 +511,7 @@ export async function enrolExistingUserAsMember(
 const EDITABLE_FIELDS = [
   "firstName",
   "lastName",
+  "title",
   "phone",
   "email",
   "nationalId",
@@ -560,7 +563,14 @@ export async function updateMember(params: {
     where: { id: memberId },
     include: {
       user: {
-        select: { id: true, firstName: true, lastName: true, phone: true, email: true },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          title: true,
+          phone: true,
+          email: true,
+        },
       },
     },
   });
@@ -620,6 +630,7 @@ export async function updateMember(params: {
   const before: EditableSnapshot = {
     firstName: existing.user.firstName,
     lastName: existing.user.lastName,
+    title: existing.user.title,
     phone: existing.user.phone,
     email: existing.user.email,
     nationalId: existing.nationalId,
@@ -641,6 +652,7 @@ export async function updateMember(params: {
   const after: EditableSnapshot = {
     firstName: input.firstName,
     lastName: input.lastName,
+    title: input.title ?? null,
     phone: input.phone,
     email: input.email ?? null,
     nationalId: input.nationalId ?? null,
@@ -678,6 +690,9 @@ export async function updateMember(params: {
       data: {
         firstName: input.firstName,
         lastName: input.lastName,
+        // Cleared rather than left behind when emptied: someone who stops
+        // being treasurer should stop printing cards that say so.
+        title: input.title ?? null,
         phone: input.phone,
         email: input.email ?? null,
       },
@@ -954,6 +969,9 @@ export async function getMemberProfile(memberId: string) {
         select: {
           firstName: true,
           lastName: true,
+          // The office printed on the membership card; the edit form needs the
+          // current value to show it.
+          title: true,
           email: true,
           phone: true,
           status: true,

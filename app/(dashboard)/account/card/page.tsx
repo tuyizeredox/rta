@@ -47,14 +47,7 @@ export default async function AccountCardPage() {
     select: { userId: true },
   });
 
-  const roleLabel =
-    context.user.role === "SUPER_ADMIN"
-      ? d.shell.superAdmin
-      : context.user.role === "ADMIN"
-        ? d.shell.admin
-        : d.shell.member;
-
-  const card = await getMembershipCardData(context.user.id, roleLabel);
+  const card = await getMembershipCardData(context.user.id);
   const sizes = await getCardTextSizes(card);
 
   // The QR is drawn here, on the server, and handed to the preview as finished

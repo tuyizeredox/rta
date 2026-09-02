@@ -1,6 +1,5 @@
 import { type NextRequest } from "next/server";
 import { requireApiAuth } from "@/lib/auth/guards";
-import { getDashboardCopy } from "@/lib/i18n/server";
 import {
   getMembershipCardData,
   renderCardFront,
@@ -47,18 +46,7 @@ export const GET = withErrorHandling(async (request: NextRequest) => {
     return new Response(new Uint8Array(await renderCardBack()), { headers });
   }
 
-  // The office printed under the name falls back to the role, which is
-  // translated — so the copy is resolved here, where the request's locale is
-  // visible, rather than inside the renderer.
-  const { d } = await getDashboardCopy();
-  const roleLabel =
-    context.user.role === "SUPER_ADMIN"
-      ? d.shell.superAdmin
-      : context.user.role === "ADMIN"
-        ? d.shell.admin
-        : d.shell.member;
-
-  const data = await getMembershipCardData(context.user.id, roleLabel);
+  const data = await getMembershipCardData(context.user.id);
 
   return new Response(new Uint8Array(await renderCardFront(data)), { headers });
 });

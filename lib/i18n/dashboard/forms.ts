@@ -19,6 +19,7 @@ export interface FormsCopy {
   field: {
     firstName: string;
     lastName: string;
+    memberTitle: string;
     email: string;
     phone: string;
     nationalId: string;
@@ -53,6 +54,7 @@ export interface FormsCopy {
     phoneAdmin: string;
     nationalIdRegister: string;
     nationalIdAdmin: string;
+    memberTitle: string;
     emailOptional: string;
     mobileMoney: string;
     districtRegister: string;
@@ -151,6 +153,7 @@ export const forms: Record<Locale, FormsCopy> = {
       nationalId: "National ID",
       dateOfBirth: "Date of birth",
       gender: "Gender",
+      memberTitle: "Office held",
       occupation: "Occupation or business",
       businessName: "Business name",
       address: "Address",
@@ -180,6 +183,8 @@ export const forms: Record<Locale, FormsCopy> = {
       phoneAdmin:
         "Used to reach them, and to match payments sent from this number.",
       nationalIdRegister: "16 digits — optional, speeds up verification",
+      memberTitle:
+        "Printed under their name on the membership card. Leave it empty for an ordinary member — the card then reads “Umunyamuryango”.",
       nationalIdAdmin:
         "16 digits. Recording it marks their identity check as pending.",
       emailOptional: "Optional. Leave blank if they do not have one.",
@@ -287,6 +292,7 @@ export const forms: Record<Locale, FormsCopy> = {
       nationalId: "Indangamuntu",
       dateOfBirth: "Itariki y'amavuko",
       gender: "Igitsina",
+      memberTitle: "Umwanya afite",
       occupation: "Umwuga cyangwa ubucuruzi",
       businessName: "Izina ry'ubucuruzi",
       address: "Aderesi",
@@ -317,6 +323,8 @@ export const forms: Record<Locale, FormsCopy> = {
         "Ikoreshwa mu kumugeraho, no guhuza ubwishyu bwoherejwe kuri iyi nimero.",
       nationalIdRegister:
         "Imibare 16 — ntibigomba, ariko byihutisha kugenzura umwirondoro",
+      memberTitle:
+        "Icapwa munsi y’izina rye ku ikarita y’ubunyamuryango. Usige ubusa ku munyamuryango usanzwe — ikarita yandika “Umunyamuryango”.",
       nationalIdAdmin:
         "Imibare 16. Kuyandika bituma igenzura ry'umwirondoro riba ritegereje.",
       emailOptional: "Ntibigomba. Siga ubusa niba adafite imeyili.",

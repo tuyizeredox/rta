@@ -83,6 +83,16 @@ export const memberFieldsSchema = z.object({
   firstName: z.string().trim().min(2, "Enter the member's first name").max(60),
   lastName: z.string().trim().min(2, "Enter the member's last name").max(60),
 
+  /// Office held in the association, printed under the name on the membership
+  /// card. Blank is the ordinary case and prints the Kinyarwanda default;
+  /// capped short because the card gives this line one line and no more.
+  title: z
+    .string()
+    .trim()
+    .max(40, "Keep the title short enough to print on a card")
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
+
   phone: z
     .string()
     .trim()

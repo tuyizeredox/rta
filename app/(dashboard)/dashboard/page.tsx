@@ -38,7 +38,17 @@ import {
 } from "@/components/dashboard/charts/SavingsChart";
 import { PaymentReferenceCard } from "@/components/dashboard/PaymentReferenceCard";
 
-export const metadata: Metadata = { title: "Dashboard | RTA Savings & Loans" };
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.shell.dashboard} | RTA Savings & Loans`,
+  };
+}
 
 // Balances must never be served from a cache — a member refreshing after a
 // deposit has to see the new figure, not a stale one.

@@ -5,6 +5,7 @@ import { runReconciliation, retryFailedPayments } from "@/lib/services/reconcili
 import { refreshOverdueStatus } from "@/lib/services/loans";
 import { verifyAccountIntegrity } from "@/lib/services/ledger";
 import { purgeExpiredSessions } from "@/lib/auth/session";
+import { purgeExpiredQrCodes } from "@/lib/auth/qr-access";
 import { notify, retryFailedDeliveries, NOTIFICATION_EVENTS } from "@/lib/notifications";
 import { add, toMoneyString } from "@/lib/money";
 
@@ -312,7 +313,7 @@ export async function retryNotifications(): Promise<JobResult> {
   return { attempted, processed: attempted };
 }
 
-/** Housekeeping: expired sessions and consumed tokens. */
+/** Housekeeping: expired sessions, consumed tokens and dead QR codes. */
 export async function cleanupExpiredRecords(): Promise<JobResult> {
   const sessions = await purgeExpiredSessions(30);
 
@@ -324,11 +325,17 @@ export async function cleanupExpiredRecords(): Promise<JobResult> {
     where: { expiresAt: { lt: new Date() } },
   });
 
+  // Long expired sign-in codes. Kept for a month past expiry rather than
+  // dropped on the day, so that "was this card still live when it was used?"
+  // is answerable for a while after the fact.
+  const qrCodes = await purgeExpiredQrCodes(30);
+
   return {
     sessions,
     tokens: tokens.count,
     idempotencyKeys: idempotency.count,
-    processed: sessions + tokens.count + idempotency.count,
+    qrCodes,
+    processed: sessions + tokens.count + idempotency.count + qrCodes,
   };
 }
 

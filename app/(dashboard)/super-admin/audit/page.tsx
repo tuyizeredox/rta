@@ -4,7 +4,18 @@ import { getDashboardCopy } from "@/lib/i18n/server";
 import { PageHeader } from "@/components/dashboard/DashboardShell";
 import { AuditLogTable } from "@/components/dashboard/AuditLogTable";
 
-export const metadata: Metadata = { title: "Platform audit log | RTA" };
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.platform.audit.title} | RTA`,
+  };
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function SuperAdminAuditPage({

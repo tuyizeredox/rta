@@ -61,6 +61,11 @@ const schema = z
     SESSION_IDLE_TIMEOUT_MINUTES: intFrom(120, 5),
     AUTH_MAX_FAILED_ATTEMPTS: intFrom(5, 1, 50),
     AUTH_LOCKOUT_MINUTES: intFrom(15, 1),
+    // How long a printed sign-in QR code stays valid. Six months balances
+    // "a member should not have to reprint their card every term" against
+    // "a card lost in January must not still open the account in December".
+    // Members can regenerate at any time, which revokes the previous code.
+    QR_ACCESS_TTL_DAYS: intFrom(180, 1, 3650),
 
     // Jenga -----------------------------------------------------------------
     JENGA_MODE: z.enum(["sandbox", "live"]).default("sandbox"),

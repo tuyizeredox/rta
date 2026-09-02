@@ -1,18 +1,30 @@
 import type { Metadata } from "next";
-import { ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { QrCode, ShieldCheck } from "lucide-react";
 import { requireAuth } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { getDashboardCopy } from "@/lib/i18n/server";
-import { pluralize } from "@/lib/i18n/fill";
+import { fill, pluralize } from "@/lib/i18n/fill";
 import { formatDateTime } from "@/lib/i18n/dates";
 import { PageHeader } from "@/components/dashboard/DashboardShell";
 import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
+import { getActiveQrCode } from "@/lib/auth/qr-access";
 
-export const metadata: Metadata = {
-  title: "Security & password | RTA",
-  robots: { index: false, follow: false },
-};
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.member.security.title} | RTA`,
+    robots: { index: false, follow: false },
+  };
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function AccountSecurityPage({
@@ -25,7 +37,7 @@ export default async function AccountSecurityPage({
   const { d, locale } = await getDashboardCopy();
   const copy = d.member.security;
 
-  const [sessions, recentLogins] = await Promise.all([
+  const [sessions, recentLogins, qrCode] = await Promise.all([
     prisma.session.count({
       where: { userId: context.user.id, revokedAt: null, expiresAt: { gt: new Date() } },
     }),
@@ -41,6 +53,7 @@ export default async function AccountSecurityPage({
         createdAt: true,
       },
     }),
+    getActiveQrCode(context.user.id),
   ]);
 
   const forced = params.required === "1" || context.user.mustChangePassword;
@@ -65,6 +78,29 @@ export default async function AccountSecurityPage({
         <p className="mt-2 text-sm text-ink-muted">
           {pluralize(copy.sessionsCount, sessions)} {copy.sessionsWarning}
         </p>
+      </section>
+
+      {/* A second way into this account deserves to be visible on the page
+          where someone checks their security, not only on the page where they
+          created it. Someone reviewing "who can get in" must be able to see
+          that a scannable card exists, and switch it off from here. */}
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-card">
+        <h2 className="flex items-center gap-2 font-heading text-base font-semibold text-ink">
+          <QrCode className="size-4 text-primary" aria-hidden="true" />
+          {d.account.qr.title}
+        </h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          {qrCode
+            ? fill(d.account.qr.validUntil, {
+                date: formatDateTime(qrCode.expiresAt, locale),
+              })
+            : d.account.qr.noCodeTitle}
+        </p>
+        <Button asChild variant="outline" size="sm" className="mt-4">
+          <Link href="/account/qr">
+            {qrCode ? d.account.qr.regenerate : d.account.qr.generate}
+          </Link>
+        </Button>
       </section>
 
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-card">

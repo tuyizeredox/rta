@@ -1181,7 +1181,7 @@ export async function getReportBundle(
     associationId
       ? prisma.$queryRaw<{ month: string; deposits: string; withdrawals: string }[]>`
           SELECT
-            to_char(date_trunc('month', "createdAt"), 'Mon YYYY')            AS month,
+            to_char(date_trunc('month', "createdAt"), 'YYYY-MM')             AS month,
             COALESCE(SUM(amount) FILTER (WHERE type = 'DEPOSIT'), 0)::text    AS deposits,
             COALESCE(SUM(amount) FILTER (WHERE type = 'WITHDRAWAL'), 0)::text AS withdrawals
           FROM savings_transactions
@@ -1192,7 +1192,7 @@ export async function getReportBundle(
         `
       : prisma.$queryRaw<{ month: string; deposits: string; withdrawals: string }[]>`
           SELECT
-            to_char(date_trunc('month', "createdAt"), 'Mon YYYY')            AS month,
+            to_char(date_trunc('month', "createdAt"), 'YYYY-MM')             AS month,
             COALESCE(SUM(amount) FILTER (WHERE type = 'DEPOSIT'), 0)::text    AS deposits,
             COALESCE(SUM(amount) FILTER (WHERE type = 'WITHDRAWAL'), 0)::text AS withdrawals
           FROM savings_transactions

@@ -17,6 +17,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney, gt } from "@/lib/money";
+import { useLanguage } from "@/components/LanguageProvider";
+import { fill, pluralize } from "@/lib/i18n/fill";
+import { formatDate } from "@/lib/i18n/dates";
 
 interface Application {
   id: string;
@@ -82,6 +85,8 @@ export function LoanApplicationReview({
   canDisburse: boolean;
 }) {
   const router = useRouter();
+  const { d, locale } = useLanguage();
+  const copy = d.admin.applications;
 
   const [approving, setApproving] = useState<Application | null>(null);
   const [rejecting, setRejecting] = useState<Application | null>(null);
@@ -100,7 +105,7 @@ export function LoanApplicationReview({
     });
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "The action could not be completed");
+      throw new Error(payload?.error?.message ?? copy.actionFailed);
     }
     router.refresh();
   }
@@ -113,7 +118,7 @@ export function LoanApplicationReview({
     });
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "Disbursement failed");
+      throw new Error(payload?.error?.message ?? copy.disbursementFailed);
     }
     router.refresh();
   }
@@ -129,10 +134,10 @@ export function LoanApplicationReview({
       <Tabs defaultValue="applications">
         <TabsList>
           <TabsTrigger value="applications" count={applications.length}>
-            Applications
+            {copy.tabApplications}
           </TabsTrigger>
           <TabsTrigger value="disbursement" count={pendingDisbursement.length}>
-            Awaiting disbursement
+            {copy.tabDisbursement}
           </TabsTrigger>
         </TabsList>
 
@@ -140,7 +145,7 @@ export function LoanApplicationReview({
           <div className="space-y-4">
             {applications.length === 0 && (
               <p className="rounded-2xl border border-dashed border-border py-10 text-center text-sm text-ink-muted">
-                No applications awaiting review.
+                {copy.noneAwaitingReview}
               </p>
             )}
 
@@ -159,7 +164,10 @@ export function LoanApplicationReview({
                       <h3 className="font-heading text-lg font-bold text-ink">
                         {formatMoney(application.requestedAmount)}
                         <span className="ml-2 text-sm font-normal text-ink-muted">
-                          over {application.termMonths} months · {application.productName}
+                          {fill(copy.overMonths, {
+                            months: application.termMonths,
+                            product: application.productName,
+                          })}
                         </span>
                       </h3>
                       <p className="mt-0.5 text-sm text-ink-muted">
@@ -172,30 +180,35 @@ export function LoanApplicationReview({
                       <p className="mt-0.5 font-mono text-xs text-ink-muted">
                         {application.reference}
                         {application.submittedAt &&
-                          ` · submitted ${new Date(application.submittedAt).toLocaleDateString("en-GB")}`}
+                          fill(copy.submittedOn, {
+                            date: formatDate(application.submittedAt, locale),
+                          })}
                       </p>
                     </div>
                     <StatusBadge status={application.status} />
                   </div>
 
                   <p className="mt-4 rounded-xl bg-background p-3 text-sm leading-relaxed text-ink">
-                    <span className="font-semibold">Purpose:</span> {application.purpose}
+                    <span className="font-semibold">{copy.purpose}</span>{" "}
+                    {application.purpose}
                   </p>
 
                   {/* The member's lending history — the reviewer's evidence. */}
                   <dl className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <Metric
-                      label="Savings balance"
+                      label={copy.savingsBalance}
                       value={formatMoney(application.savingsBalance)}
                       note={
                         application.savingsAtApplication &&
                         application.savingsAtApplication !== application.savingsBalance
-                          ? `was ${formatMoney(application.savingsAtApplication)} at application`
+                          ? fill(copy.savingsWas, {
+                              amount: formatMoney(application.savingsAtApplication),
+                            })
                           : undefined
                       }
                     />
                     <Metric
-                      label="Eligible up to"
+                      label={copy.eligibleUpTo}
                       value={
                         application.maxEligibleAmount
                           ? formatMoney(application.maxEligibleAmount)
@@ -204,23 +217,28 @@ export function LoanApplicationReview({
                       tone={overCeiling ? "bad" : "good"}
                     />
                     <Metric
-                      label="Already owing"
+                      label={copy.alreadyOwing}
                       value={formatMoney(application.existingOutstanding)}
                       note={
                         application.existingLoanCount > 0
-                          ? `${application.existingLoanCount} active loan(s)`
-                          : "No active loans"
+                          ? pluralize(
+                              copy.activeLoanCount,
+                              application.existingLoanCount
+                            )
+                          : copy.noActiveLoans
                       }
                       tone={application.existingLoanCount > 0 ? "bad" : undefined}
                     />
                     <Metric
-                      label="Repayment record"
+                      label={copy.repaymentRecord}
                       value={
                         application.hasOverdueHistory
-                          ? "Has been overdue"
+                          ? copy.hasBeenOverdue
                           : application.completedLoans > 0
-                            ? `${application.completedLoans} repaid`
-                            : "No history"
+                            ? fill(copy.loansRepaid, {
+                                count: application.completedLoans,
+                              })
+                            : copy.noHistory
                       }
                       tone={application.hasOverdueHistory ? "bad" : "good"}
                     />
@@ -228,17 +246,17 @@ export function LoanApplicationReview({
 
                   {overCeiling && (
                     <Alert variant="warning" className="mt-4">
-                      <AlertTriangle className="inline size-3.5" aria-hidden="true" /> The
-                      request of {formatMoney(application.requestedAmount)} exceeds the
-                      member&rsquo;s current ceiling of{" "}
-                      {formatMoney(application.maxEligibleAmount!)}. Approve a lower
-                      amount, or decline.
+                      <AlertTriangle className="inline size-3.5" aria-hidden="true" />{" "}
+                      {fill(copy.overCeiling, {
+                        amount: formatMoney(application.requestedAmount),
+                        ceiling: formatMoney(application.maxEligibleAmount!),
+                      })}
                     </Alert>
                   )}
 
                   {application.hasOverdueHistory && (
                     <Alert variant="warning" className="mt-3">
-                      This member has been overdue on a previous loan.
+                      {copy.overdueWarning}
                     </Alert>
                   )}
 
@@ -246,7 +264,7 @@ export function LoanApplicationReview({
                     <div className="mt-4">
                       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ink-muted">
                         <ShieldCheck className="size-3.5" aria-hidden="true" />
-                        Guarantors
+                        {copy.guarantors}
                       </p>
                       <ul className="mt-2 flex flex-wrap gap-2">
                         {application.guarantors.map((g, i) => (
@@ -275,7 +293,7 @@ export function LoanApplicationReview({
                         }}
                       >
                         <Check className="size-3.5" aria-hidden="true" />
-                        Approve
+                        {d.common.approve}
                       </Button>
                     )}
                     <Button
@@ -288,7 +306,7 @@ export function LoanApplicationReview({
                       }}
                     >
                       <HelpCircle className="size-3.5" aria-hidden="true" />
-                      Request info
+                      {copy.requestInfo}
                     </Button>
                     {canReject && (
                       <Button
@@ -300,7 +318,7 @@ export function LoanApplicationReview({
                         }}
                       >
                         <X className="size-3.5" aria-hidden="true" />
-                        Decline
+                        {copy.decline}
                       </Button>
                     )}
                   </div>
@@ -314,7 +332,7 @@ export function LoanApplicationReview({
           <div className="space-y-3">
             {pendingDisbursement.length === 0 && (
               <p className="rounded-2xl border border-dashed border-border py-10 text-center text-sm text-ink-muted">
-                No approved loans awaiting disbursement.
+                {copy.noneAwaitingDisbursement}
               </p>
             )}
 
@@ -327,7 +345,11 @@ export function LoanApplicationReview({
                   <p className="font-heading text-base font-bold text-ink">
                     {formatMoney(loan.principal)}
                     <span className="ml-2 text-sm font-normal text-ink-muted">
-                      {loan.productName} · {loan.interestRate}% · {loan.termMonths} months
+                      {fill(copy.loanTerms, {
+                        product: loan.productName,
+                        rate: loan.interestRate,
+                        months: loan.termMonths,
+                      })}
                     </span>
                   </p>
                   <p className="mt-0.5 text-sm text-ink-muted">
@@ -345,10 +367,12 @@ export function LoanApplicationReview({
                     }}
                   >
                     <Banknote className="size-3.5" aria-hidden="true" />
-                    Disburse
+                    {copy.disburse}
                   </Button>
                 ) : (
-                  <span className="text-xs text-ink-muted">No permission to disburse</span>
+                  <span className="text-xs text-ink-muted">
+                    {copy.noDisbursePermission}
+                  </span>
                 )}
               </div>
             ))}
@@ -360,13 +384,13 @@ export function LoanApplicationReview({
       <ConfirmDialog
         open={approving !== null}
         onOpenChange={(open) => !open && setApproving(null)}
-        title="Approve this loan?"
+        title={copy.approveTitle}
         description={
           approving
-            ? `A loan will be created for ${approving.memberName} awaiting disbursement. No money moves until you disburse it.`
+            ? fill(copy.approveBody, { name: approving.memberName })
             : undefined
         }
-        confirmLabel="Approve loan"
+        confirmLabel={copy.approveConfirm}
         onConfirm={async () => {
           if (!approving) return;
           await callApplication(approving.id, {
@@ -378,7 +402,7 @@ export function LoanApplicationReview({
       >
         <div className="space-y-2">
           <label htmlFor="approved-amount" className="block text-sm font-semibold text-ink">
-            Approved amount
+            {copy.approvedAmount}
           </label>
           <Input
             id="approved-amount"
@@ -387,9 +411,11 @@ export function LoanApplicationReview({
             onChange={(e) => setApprovedAmount(e.target.value)}
           />
           <p className="text-xs text-ink-muted">
-            You may approve less than requested, but never more.
+            {copy.approvedAmountHint}
             {approving?.maxEligibleAmount &&
-              ` This member's ceiling is ${formatMoney(approving.maxEligibleAmount)}.`}
+              fill(copy.approvedAmountCeiling, {
+                amount: formatMoney(approving.maxEligibleAmount),
+              })}
           </p>
         </div>
       </ConfirmDialog>
@@ -398,17 +424,17 @@ export function LoanApplicationReview({
       <ConfirmDialog
         open={rejecting !== null}
         onOpenChange={(open) => !open && setRejecting(null)}
-        title="Decline this application?"
+        title={copy.declineTitle}
         description={
           rejecting
-            ? `${rejecting.memberName} will be told their application was not approved, and given the reason.`
+            ? fill(copy.declineBody, { name: rejecting.memberName })
             : undefined
         }
-        confirmLabel="Decline application"
+        confirmLabel={copy.declineConfirm}
         tone="danger"
         requireReason
-        reasonLabel="Why is this being declined?"
-        reasonPlaceholder="e.g. Requested amount exceeds three times the member's savings"
+        reasonLabel={copy.declineReasonLabel}
+        reasonPlaceholder={copy.declineReasonPlaceholder}
         onConfirm={async (reason) => {
           if (rejecting) {
             await callApplication(rejecting.id, { action: "reject", reason });
@@ -420,13 +446,13 @@ export function LoanApplicationReview({
       <ConfirmDialog
         open={requestingInfo !== null}
         onOpenChange={(open) => !open && setRequestingInfo(null)}
-        title="Request more information"
-        description="The member will be notified and the application held until they respond."
-        confirmLabel="Send request"
+        title={copy.infoTitle}
+        description={copy.infoBody}
+        confirmLabel={copy.infoConfirm}
         onConfirm={async () => {
           if (!requestingInfo) return;
           if (infoText.trim().length < 10) {
-            throw new Error("Say what information is needed, in at least 10 characters");
+            throw new Error(copy.infoTooShort);
           }
           await callApplication(requestingInfo.id, {
             action: "request-info",
@@ -436,13 +462,13 @@ export function LoanApplicationReview({
       >
         <div className="space-y-2">
           <label htmlFor="info-text" className="block text-sm font-semibold text-ink">
-            What do you need from the member?
+            {copy.infoLabel}
           </label>
           <Textarea
             id="info-text"
             value={infoText}
             onChange={(e) => setInfoText(e.target.value)}
-            placeholder="e.g. Please provide a quotation for the machines you intend to buy"
+            placeholder={copy.infoPlaceholder}
             rows={3}
           />
         </div>
@@ -452,13 +478,16 @@ export function LoanApplicationReview({
       <ConfirmDialog
         open={disbursing !== null}
         onOpenChange={(open) => !open && setDisbursing(null)}
-        title="Disburse this loan?"
+        title={copy.disburseTitle}
         description={
           disbursing
-            ? `${formatMoney(disbursing.principal)} will be credited to ${disbursing.memberName}'s savings account, less any fees, and the full repayment schedule will be generated. This cannot be undone except by a reversal.`
+            ? fill(copy.disburseBody, {
+                amount: formatMoney(disbursing.principal),
+                name: disbursing.memberName,
+              })
             : undefined
         }
-        confirmLabel="Disburse now"
+        confirmLabel={copy.disburseConfirm}
         onConfirm={async () => {
           if (disbursing) await disburse(disbursing);
         }}

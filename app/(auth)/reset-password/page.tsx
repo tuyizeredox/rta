@@ -5,10 +5,18 @@ import { ArrowLeft } from "lucide-react";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import { getDashboardCopy } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Set a new password | RTA Savings & Loans",
-  robots: { index: false, follow: false },
-};
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.auth.reset.title} | RTA Savings & Loans`,
+    robots: { index: false, follow: false },
+  };
+}
 
 export default async function ResetPasswordPage() {
   const { d } = await getDashboardCopy();

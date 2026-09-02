@@ -1,6 +1,6 @@
 import type { LucideIcon } from "lucide-react";
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import Link from "next/link";
+import { TrendIndicator } from "@/components/ui/trend-indicator";
 import { cn } from "@/lib/utils";
 
 /**
@@ -105,42 +105,6 @@ export function StatCard({
   }
 
   return <div className={classes}>{content}</div>;
-}
-
-function TrendIndicator({
-  percent,
-  label,
-  increaseIsGood = true,
-}: NonNullable<StatCardProps["trend"]>) {
-  const rounded = Math.round(percent * 10) / 10;
-
-  if (rounded === 0) {
-    return (
-      <span className="inline-flex items-center gap-1 text-xs font-semibold text-ink-muted">
-        <Minus className="size-3.5" aria-hidden="true" />
-        No change
-        {label && <span className="font-normal text-ink-muted">{label}</span>}
-      </span>
-    );
-  }
-
-  const rising = rounded > 0;
-  const good = rising === increaseIsGood;
-  const Arrow = rising ? ArrowUpRight : ArrowDownRight;
-
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 text-xs font-semibold",
-        good ? "text-emerald-700" : "text-red-600"
-      )}
-    >
-      <Arrow className="size-3.5" aria-hidden="true" />
-      {rising ? "+" : ""}
-      {rounded}%
-      {label && <span className="font-normal text-ink-muted">{label}</span>}
-    </span>
-  );
 }
 
 /** Responsive grid for a row of tiles. */

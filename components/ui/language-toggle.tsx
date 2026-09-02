@@ -5,9 +5,10 @@ import { useLanguage } from "@/components/LanguageProvider";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/types";
 
+/** Kinyarwanda first, because it is the default and the majority language. */
 const LANGUAGES: { code: Locale; label: string; short: string }[] = [
-  { code: "en", label: "English", short: "EN" },
   { code: "rw", label: "Ikinyarwanda", short: "RW" },
+  { code: "en", label: "English", short: "EN" },
 ];
 
 /**

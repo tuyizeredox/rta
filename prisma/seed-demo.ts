@@ -98,7 +98,7 @@ export async function seedDemoData(prisma: PrismaClient): Promise<void> {
         email: adminEmail,
         phone: "+250788562837",
         firstName: "Daniel",
-        lastName: "Nkurunziza",
+        lastName: "Nshimiyimana",
         passwordHash,
         role: "ADMIN",
         status: "ACTIVE",

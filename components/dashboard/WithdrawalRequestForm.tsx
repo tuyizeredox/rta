@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Field } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
+import { useLanguage } from "@/components/LanguageProvider";
+import { fill, split } from "@/lib/i18n/fill";
 import {
   Select,
   SelectContent,
@@ -56,6 +58,17 @@ export function WithdrawalRequestForm({
   requiresApproval: boolean;
 }) {
   const router = useRouter();
+  const { d } = useLanguage();
+  const copy = d.member.withdrawals;
+
+  // Both sentences put a bold figure mid-phrase, and Kinyarwanda does not put
+  // it in the same place English does, so the translation is split around the
+  // placeholder rather than assembled from fragments.
+  const [availableBefore, availableAfter] = split(copy.availableNow, "amount");
+  const [referenceBefore, referenceAfter] = split(
+    copy.successReference,
+    "reference"
+  );
 
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
@@ -122,7 +135,7 @@ export function WithdrawalRequestForm({
 
       if (!response.ok) {
         if (payload?.error?.details) setFieldErrors(payload.error.details);
-        setError(payload?.error?.message ?? "Could not submit your request");
+        setError(payload?.error?.message ?? copy.submitFailed);
         setSubmitting(false);
         return;
       }
@@ -134,25 +147,27 @@ export function WithdrawalRequestForm({
       setSubmitting(false);
       router.refresh();
     } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+      setError(d.common.serverUnreachable);
       setSubmitting(false);
     }
   }
 
   if (success) {
     return (
-      <Alert variant="success" title="Withdrawal request submitted">
+      <Alert variant="success" title={copy.successTitle}>
         <span className="flex flex-wrap items-center gap-2">
-          Reference <strong>{success}</strong>.
-          {requiresApproval
-            ? " An administrator will review it shortly."
-            : " It will be paid out shortly."}
+          <span>
+            {referenceBefore}
+            <strong>{success}</strong>
+            {referenceAfter}{" "}
+            {requiresApproval ? copy.successUnderReview : copy.successPayingOut}
+          </span>
           <button
             type="button"
             onClick={() => setSuccess(null)}
             className="font-semibold underline"
           >
-            Make another request
+            {copy.makeAnother}
           </button>
         </span>
       </Alert>
@@ -166,11 +181,12 @@ export function WithdrawalRequestForm({
       noValidate
     >
       <h2 className="font-heading text-base font-semibold text-ink">
-        Request a withdrawal
+        {copy.formTitle}
       </h2>
       <p className="mt-1 text-sm text-ink-muted">
-        You can withdraw up to{" "}
-        <strong className="text-ink">{formatMoney(available)}</strong> right now.
+        {availableBefore}
+        <strong className="text-ink">{formatMoney(available)}</strong>
+        {availableAfter}
       </p>
 
       {error && (
@@ -182,9 +198,16 @@ export function WithdrawalRequestForm({
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         <Field
           id="wd-amount"
-          label="Amount"
+          label={d.common.amount}
           error={fieldErrors.amount}
-          hint={`Minimum ${formatMoney(minimum)}${maximum ? ` · maximum ${formatMoney(maximum)}` : ""}`}
+          hint={
+            maximum
+              ? fill(copy.hintMinMax, {
+                  min: formatMoney(minimum),
+                  max: formatMoney(maximum),
+                })
+              : fill(copy.hintMin, { min: formatMoney(minimum) })
+          }
           required
         >
           {(props) => (
@@ -198,16 +221,18 @@ export function WithdrawalRequestForm({
           )}
         </Field>
 
-        <Field id="wd-channel" label="Payout method" required>
+        <Field id="wd-channel" label={copy.payoutMethod} required>
           {() => (
             <Select value={channel} onValueChange={setChannel}>
               <SelectTrigger id="wd-channel">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MOBILE_MONEY">Mobile money</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Bank transfer</SelectItem>
-                <SelectItem value="CASH">Cash at the office</SelectItem>
+                <SelectItem value="MOBILE_MONEY">
+                  {copy.methodMobileMoney}
+                </SelectItem>
+                <SelectItem value="BANK_TRANSFER">{copy.methodBank}</SelectItem>
+                <SelectItem value="CASH">{copy.methodCash}</SelectItem>
               </SelectContent>
             </Select>
           )}
@@ -218,15 +243,21 @@ export function WithdrawalRequestForm({
         <div className="mt-5">
           <Field
             id="wd-destination"
-            label={channel === "MOBILE_MONEY" ? "Mobile money number" : "Bank account"}
-            hint="Leave blank to use the details on your profile"
+            label={
+              channel === "MOBILE_MONEY" ? copy.mobileNumber : copy.bankAccount
+            }
+            hint={copy.destinationHint}
           >
             {(props) => (
               <Input
                 {...props}
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                placeholder={channel === "MOBILE_MONEY" ? "0788123456" : "Account number"}
+                placeholder={
+                  channel === "MOBILE_MONEY"
+                    ? "0788123456"
+                    : copy.accountNumberPlaceholder
+                }
               />
             )}
           </Field>
@@ -234,13 +265,13 @@ export function WithdrawalRequestForm({
       )}
 
       <div className="mt-5">
-        <Field id="wd-reason" label="Reason (optional)">
+        <Field id="wd-reason" label={copy.reasonLabel}>
           {(props) => (
             <Textarea
               {...props}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="What is the withdrawal for?"
+              placeholder={copy.reasonPlaceholder}
               rows={2}
             />
           )}
@@ -251,43 +282,47 @@ export function WithdrawalRequestForm({
         <div className="mt-5 rounded-xl border border-border bg-background p-4">
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-muted">Amount requested</dt>
+              <dt className="text-ink-muted">{copy.amountRequested}</dt>
               <dd className="font-semibold tabular-nums">{formatMoney(preview.amount)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-ink-muted">Withdrawal fee</dt>
+              <dt className="text-ink-muted">{copy.withdrawalFee}</dt>
               <dd className="font-semibold tabular-nums">{formatMoney(preview.fee)}</dd>
             </div>
             <div className="flex justify-between border-t border-border pt-2">
-              <dt className="font-semibold text-ink">You receive</dt>
+              <dt className="font-semibold text-ink">{copy.youReceive}</dt>
               <dd className="font-heading text-base font-bold tabular-nums text-ink">
                 {formatMoney(preview.net)}
               </dd>
             </div>
             <div className="flex justify-between text-xs">
-              <dt className="text-ink-muted">Deducted from your balance</dt>
+              <dt className="text-ink-muted">{copy.deductedFromBalance}</dt>
               <dd className="tabular-nums text-ink-muted">{formatMoney(preview.total)}</dd>
             </div>
           </dl>
 
           {preview.exceedsAvailable && (
             <p className="mt-3 text-xs font-medium text-red-600">
-              This exceeds your available balance of {formatMoney(available)}.
+              {fill(copy.errExceedsAvailable, {
+                amount: formatMoney(available),
+              })}
             </p>
           )}
           {preview.belowMinimum && (
             <p className="mt-3 text-xs font-medium text-red-600">
-              The minimum withdrawal is {formatMoney(minimum)}.
+              {fill(copy.errBelowMinimum, { amount: formatMoney(minimum) })}
             </p>
           )}
           {preview.aboveMaximum && maximum && (
             <p className="mt-3 text-xs font-medium text-red-600">
-              The maximum withdrawal is {formatMoney(maximum)}.
+              {fill(copy.errAboveMaximum, { amount: formatMoney(maximum) })}
             </p>
           )}
           {preview.breaksMinimumBalance && (
             <p className="mt-3 text-xs font-medium text-red-600">
-              You must keep at least {formatMoney(minimumBalance)} in your account.
+              {fill(copy.errMinimumBalance, {
+                amount: formatMoney(minimumBalance),
+              })}
             </p>
           )}
         </div>
@@ -297,12 +332,12 @@ export function WithdrawalRequestForm({
         {submitting ? (
           <>
             <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-            Submitting…
+            {d.common.submitting}
           </>
         ) : (
           <>
             <Send className="size-4" aria-hidden="true" />
-            Submit request
+            {copy.submitRequest}
           </>
         )}
       </Button>
@@ -310,8 +345,7 @@ export function WithdrawalRequestForm({
       {requiresApproval && (
         <p className="mt-3 flex items-start gap-1.5 text-xs text-ink-muted">
           <CheckCircle2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-          Requests are reviewed by the association. Your balance is only reduced
-          once the payout has been made.
+          {copy.approvalNote}
         </p>
       )}
     </form>

@@ -37,7 +37,18 @@ import {
   TableEmpty,
 } from "@/components/ui/table";
 
-export const metadata: Metadata = { title: "Administration | RTA Savings & Loans" };
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.admin.overview.title} | RTA Savings & Loans`,
+  };
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminDashboardPage() {

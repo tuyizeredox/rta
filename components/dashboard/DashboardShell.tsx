@@ -9,7 +9,9 @@ import {
   ChevronRight,
   LogOut,
   Menu,
+  QrCode,
   Settings,
+  ShieldQuestion,
   User as UserIcon,
   X,
 } from "lucide-react";
@@ -59,9 +61,15 @@ export function DashboardShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const { d } = useLanguage();
 
+  // `memberNumber` is the shell's existing proxy for "this person has a member
+  // record of their own" — it is already sent for exactly those accounts, and
+  // it is what decides whether staff see their own savings links.
   const sections = useMemo(
-    () => visibleNavigation(user.role, permissions),
-    [user.role, permissions]
+    () =>
+      visibleNavigation(user.role, permissions, {
+        hasMemberAccount: Boolean(user.memberNumber),
+      }),
+    [user.role, permissions, user.memberNumber]
   );
 
   // The slide-over closes via each link's onNavigate rather than an effect on
@@ -232,7 +240,12 @@ function UserMenu({ user }: { user: ShellUser }) {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
-  const profileHref = user.role === "MEMBER" ? "/dashboard/profile" : "/account/profile";
+  // Keyed on having a member record rather than on role. `/account/profile`
+  // does not exist, so the old role test sent every administrator to a 404 —
+  // and now that staff can hold a member record of their own, the member
+  // profile is the right page for the ones who do. The rest get their account
+  // status, which is where a staff account's own details live.
+  const profileHref = user.memberNumber ? "/dashboard/profile" : "/account/status";
 
   return (
     <DropdownMenu.Root>
@@ -275,7 +288,36 @@ function UserMenu({ user }: { user: ShellUser }) {
               )}
             >
               <UserIcon className="size-4" aria-hidden="true" />
-              My profile
+              {d.shell.myProfile}
+            </Link>
+          </DropdownMenu.Item>
+
+          <DropdownMenu.Item asChild>
+            <Link
+              href="/account/status"
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-ink outline-none transition-colors",
+                "data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary-hover"
+              )}
+            >
+              <ShieldQuestion className="size-4" aria-hidden="true" />
+              {d.shell.accountStatus}
+            </Link>
+          </DropdownMenu.Item>
+
+          {/* Reachable from every role's menu, not only the member sidebar:
+              an administrator signing in at a workshop has the same problem a
+              member does. */}
+          <DropdownMenu.Item asChild>
+            <Link
+              href="/account/qr"
+              className={cn(
+                "flex cursor-pointer items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm text-ink outline-none transition-colors",
+                "data-[highlighted]:bg-primary-50 data-[highlighted]:text-primary-hover"
+              )}
+            >
+              <QrCode className="size-4" aria-hidden="true" />
+              {d.shell.myQrCode}
             </Link>
           </DropdownMenu.Item>
 
@@ -288,7 +330,7 @@ function UserMenu({ user }: { user: ShellUser }) {
               )}
             >
               <Settings className="size-4" aria-hidden="true" />
-              Security & password
+              {d.shell.securityPassword}
             </Link>
           </DropdownMenu.Item>
 
@@ -358,7 +400,9 @@ export function PageHeader({
           </p>
         )}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div>
+      )}
     </div>
   );
 }

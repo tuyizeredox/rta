@@ -42,16 +42,22 @@ export function EmptyState({
   );
 }
 
-/** Error state — recoverable, with a retry affordance. */
+/**
+ * Error state — recoverable, with a retry affordance.
+ *
+ * `title` is required rather than defaulting to "Something went wrong": this
+ * is a shared component with no locale of its own, and a default would be a
+ * sentence no translation could reach.
+ */
 export function ErrorState({
   icon: Icon,
-  title = "Something went wrong",
+  title,
   description,
   action,
   className,
 }: {
   icon: LucideIcon;
-  title?: string;
+  title: string;
   description?: string;
   action?: React.ReactNode;
   className?: string;

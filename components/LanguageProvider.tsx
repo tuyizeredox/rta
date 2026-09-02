@@ -13,6 +13,7 @@ import dashboardDictionary, {
   type DashboardDictionary,
 } from "@/lib/i18n/dashboard";
 import {
+  DEFAULT_LOCALE,
   LOCALE_COOKIE,
   LOCALE_COOKIE_MAX_AGE,
   LOCALE_STORAGE_KEY,
@@ -36,7 +37,12 @@ function writeLocaleCookie(locale: Locale) {
 }
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  // Starts on DEFAULT_LOCALE rather than a hardcoded language, and must stay
+  // in step with what the server assumed when it rendered: a page's server
+  // components read the cookie, which falls back to DEFAULT_LOCALE when there
+  // is none, so anything else here would have the sidebar and the table beside
+  // it disagreeing until the first effect ran.
+  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,7 +54,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
     // Anyone who chose a language before the cookie existed has the choice in
     // localStorage only, where the server cannot see it. Mirror it across, or
-    // their dashboard pages would keep rendering in English forever.
+    // their dashboard pages would keep rendering in the default language
+    // forever, whatever they picked.
     if (!document.cookie.includes(`${LOCALE_COOKIE}=${stored}`)) {
       writeLocaleCookie(stored);
       router.refresh();

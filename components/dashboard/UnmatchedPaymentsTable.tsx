@@ -25,6 +25,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { formatMoney } from "@/lib/money";
+import { useLanguage } from "@/components/LanguageProvider";
+import { fill, pluralize } from "@/lib/i18n/fill";
+import { formatDate } from "@/lib/i18n/dates";
 
 /**
  * Unmatched payment queue with manual reconciliation.
@@ -105,6 +108,8 @@ export function UnmatchedPaymentsTable({
   totalPages: number;
 }) {
   const router = useRouter();
+  const { d, locale } = useLanguage();
+  const copy = d.admin.payments;
   const [active, setActive] = useState<UnmatchedPayment | null>(null);
   const [deleting, setDeleting] = useState<UnmatchedPayment | null>(null);
   const [selectedMember, setSelectedMember] = useState<string>("");
@@ -143,7 +148,7 @@ export function UnmatchedPaymentsTable({
 
   async function handleMatch(reason?: string) {
     if (!active || !selectedMember) {
-      throw new Error("Select the member this payment belongs to");
+      throw new Error(copy.selectMemberFirst);
     }
 
     const response = await fetch(`/api/admin/payments/${active.id}/match`, {
@@ -155,7 +160,7 @@ export function UnmatchedPaymentsTable({
     const payload = await response.json();
 
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "Could not credit this payment");
+      throw new Error(payload?.error?.message ?? copy.creditFailed);
     }
 
     setSelectedMember("");
@@ -163,7 +168,7 @@ export function UnmatchedPaymentsTable({
   }
 
   async function handleDelete(reason?: string) {
-    if (!deleting) throw new Error("No payment selected");
+    if (!deleting) throw new Error(copy.nonePicked);
 
     const response = await fetch(`/api/admin/payments/${deleting.id}`, {
       method: "DELETE",
@@ -174,7 +179,7 @@ export function UnmatchedPaymentsTable({
     const payload = await response.json();
 
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "Could not delete this payment");
+      throw new Error(payload?.error?.message ?? copy.deleteFailed);
     }
 
     setChecked((previous) => {
@@ -182,12 +187,12 @@ export function UnmatchedPaymentsTable({
       next.delete(deleting.id);
       return next;
     });
-    setNotice(payload?.message ?? "Payment deleted.");
+    setNotice(payload?.message ?? copy.paymentDeleted);
     router.refresh();
   }
 
   async function handleBulkDelete(reason?: string) {
-    if (!bulkMode) throw new Error("Nothing selected");
+    if (!bulkMode) throw new Error(copy.nonePicked);
 
     const response = await fetch("/api/admin/payments/bulk-delete", {
       method: "POST",
@@ -202,11 +207,11 @@ export function UnmatchedPaymentsTable({
     const payload = await response.json();
 
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "Could not delete these payments");
+      throw new Error(payload?.error?.message ?? copy.bulkDeleteFailed);
     }
 
     setChecked(new Set());
-    setNotice(payload?.message ?? "Payments deleted.");
+    setNotice(payload?.message ?? copy.paymentsDeleted);
     router.refresh();
   }
 
@@ -228,17 +233,14 @@ export function UnmatchedPaymentsTable({
         <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-ink">
             <strong className="font-semibold">
-              {checked.size} payment{checked.size === 1 ? "" : "s"} selected
+              {pluralize(copy.selectedCount, checked.size)}
             </strong>
-            <span className="ml-2 text-ink-muted">
-              on this page. Deleting removes them from the queue and keeps them
-              only in the audit log.
-            </span>
+            <span className="ml-2 text-ink-muted">{copy.selectedNote}</span>
           </p>
 
           <div className="flex shrink-0 flex-wrap gap-2">
             <Button size="sm" variant="ghost" onClick={() => setChecked(new Set())}>
-              Clear selection
+              {copy.clearSelection}
             </Button>
             <Button
               size="sm"
@@ -251,7 +253,7 @@ export function UnmatchedPaymentsTable({
               }}
             >
               <Trash2 className="size-3.5" aria-hidden="true" />
-              Delete selected
+              {copy.deleteSelected}
             </Button>
           </div>
         </div>
@@ -260,11 +262,11 @@ export function UnmatchedPaymentsTable({
       {canDelete && total > 0 && (
         <div className="mb-4 flex flex-col gap-2 rounded-2xl border border-dashed border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs leading-relaxed text-ink-muted">
-            Clearing out a bad import? You can empty the whole queue —{" "}
+            {copy.emptyQueueLead}{" "}
             <strong className="text-ink">
-              all {total} unmatched payment{total === 1 ? "" : "s"}
+              {pluralize(copy.emptyQueueCount, total)}
             </strong>
-            , including those on other pages.
+            {copy.emptyQueueTail}
           </p>
           <Button
             size="sm"
@@ -277,7 +279,7 @@ export function UnmatchedPaymentsTable({
             }}
           >
             <Trash2 className="size-3.5" aria-hidden="true" />
-            Delete all {total}
+            {fill(copy.deleteAll, { count: total })}
           </Button>
         </div>
       )}
@@ -292,17 +294,17 @@ export function UnmatchedPaymentsTable({
                     type="checkbox"
                     checked={allOnPageChecked}
                     onChange={toggleAllOnPage}
-                    aria-label="Select every payment on this page"
+                    aria-label={copy.selectAllOnPage}
                     className="size-4 cursor-pointer rounded border-border accent-primary"
                   />
                 </TableHead>
               )}
-              <TableHead>Received</TableHead>
-              <TableHead>Narration / payer</TableHead>
-              <TableHead align="right">Amount</TableHead>
-              <TableHead>Why unmatched</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead align="right">Action</TableHead>
+              <TableHead>{copy.colReceived}</TableHead>
+              <TableHead>{copy.colNarration}</TableHead>
+              <TableHead align="right">{d.common.amount}</TableHead>
+              <TableHead>{copy.colWhyUnmatched}</TableHead>
+              <TableHead>{d.common.status}</TableHead>
+              <TableHead align="right">{copy.colAction}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -315,18 +317,16 @@ export function UnmatchedPaymentsTable({
                       type="checkbox"
                       checked={checked.has(payment.id)}
                       onChange={() => toggleRow(payment.id)}
-                      aria-label={`Select payment ${payment.externalTransactionId}`}
+                      aria-label={fill(copy.selectPayment, {
+                        reference: payment.externalTransactionId,
+                      })}
                       className="size-4 cursor-pointer rounded border-border accent-primary"
                     />
                   </TableCell>
                 )}
 
                 <TableCell className="whitespace-nowrap align-top text-sm text-ink-muted">
-                  {new Date(payment.transactionDate).toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
+                  {formatDate(payment.transactionDate, locale)}
                   <span className="mt-0.5 block font-mono text-[11px] text-ink-muted/70">
                     {payment.externalTransactionId.slice(0, 20)}
                   </span>
@@ -335,7 +335,7 @@ export function UnmatchedPaymentsTable({
                 <TableCell className="max-w-xs align-top">
                   <span className="block text-sm text-ink">
                     {payment.narration || (
-                      <em className="text-ink-muted">No narration supplied</em>
+                      <em className="text-ink-muted">{copy.noNarration}</em>
                     )}
                   </span>
                   {(payment.payerName || payment.payerPhone) && (
@@ -348,7 +348,7 @@ export function UnmatchedPaymentsTable({
                   {payment.isSuspicious && (
                     <span className="mt-1.5 flex items-center gap-1 text-xs font-semibold text-red-600">
                       <ShieldAlert className="size-3.5" aria-hidden="true" />
-                      {payment.suspicionReason ?? "Flagged as suspicious"}
+                      {payment.suspicionReason ?? copy.flaggedSuspicious}
                     </span>
                   )}
                 </TableCell>
@@ -361,13 +361,13 @@ export function UnmatchedPaymentsTable({
                   <span className="block text-xs leading-relaxed text-ink-muted">
                     {payment.lastAttempt?.notes ??
                       payment.failureReason ??
-                      "No matching evidence found"}
+                      copy.noEvidence}
                   </span>
 
                   {payment.candidates.length > 0 && (
                     <span className="mt-1.5 block text-xs">
                       <span className="font-semibold text-amber-800">
-                        Possible members:
+                        {copy.possibleMembers}
                       </span>{" "}
                       {payment.candidates
                         .map((c) => `${c.memberNumber} (${c.fullName})`)
@@ -381,7 +381,7 @@ export function UnmatchedPaymentsTable({
                   {!payment.verified && (
                     <span className="mt-1.5 flex items-center gap-1 text-[11px] font-medium text-red-600">
                       <AlertTriangle className="size-3" aria-hidden="true" />
-                      Not verified with the bank
+                      {copy.notVerified}
                     </span>
                   )}
                 </TableCell>
@@ -403,11 +403,11 @@ export function UnmatchedPaymentsTable({
                         }}
                       >
                         <UserCheck className="size-3.5" aria-hidden="true" />
-                        Match
+                        {copy.match}
                       </Button>
                     ) : (
                       <span className="text-xs text-ink-muted">
-                        {!canMatch ? "No permission" : "Cannot credit"}
+                        {!canMatch ? copy.noPermission : copy.cannotCredit}
                       </span>
                     )}
 
@@ -422,7 +422,7 @@ export function UnmatchedPaymentsTable({
                         }}
                       >
                         <Trash2 className="size-3.5" aria-hidden="true" />
-                        Delete
+                        {d.common.delete}
                       </Button>
                     )}
                   </div>
@@ -444,17 +444,20 @@ export function UnmatchedPaymentsTable({
       <ConfirmDialog
         open={active !== null}
         onOpenChange={(open) => !open && setActive(null)}
-        title="Credit this payment to a member"
+        title={copy.matchTitle}
         description={
           active
-            ? `${formatMoney(active.amount)} received on ${new Date(active.transactionDate).toLocaleDateString("en-GB")}. This posts the money to the member's savings account immediately.`
+            ? fill(copy.matchBody, {
+                amount: formatMoney(active.amount),
+                date: formatDate(active.transactionDate, locale),
+              })
             : undefined
         }
-        confirmLabel="Credit member"
+        confirmLabel={copy.matchConfirm}
         requireReason
         reasonMinLength={10}
-        reasonLabel="Why does this payment belong to this member?"
-        reasonPlaceholder="e.g. Member confirmed by phone that they paid from their sister's mobile money account"
+        reasonLabel={copy.matchReasonLabel}
+        reasonPlaceholder={copy.matchReasonPlaceholder}
         onConfirm={handleMatch}
       >
         <div className="space-y-2">
@@ -462,12 +465,12 @@ export function UnmatchedPaymentsTable({
             htmlFor="match-member"
             className="block text-sm font-semibold text-ink"
           >
-            Member
+            {copy.matchMemberLabel}
           </label>
 
           <Select value={selectedMember} onValueChange={setSelectedMember}>
             <SelectTrigger id="match-member">
-              <SelectValue placeholder="Select the member…" />
+              <SelectValue placeholder={copy.matchMemberPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {members.map((member) => (
@@ -481,7 +484,7 @@ export function UnmatchedPaymentsTable({
           {active && active.narration && (
             <p className="flex items-start gap-1.5 rounded-lg bg-background p-2.5 text-xs text-ink-muted">
               <Link2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Narration on the payment: <strong>{active.narration}</strong>
+              {copy.narrationOnPayment} <strong>{active.narration}</strong>
             </p>
           )}
         </div>
@@ -490,34 +493,33 @@ export function UnmatchedPaymentsTable({
       <ConfirmDialog
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
-        title="Delete this payment"
+        title={copy.deleteTitle}
         description={
           deleting
-            ? `${formatMoney(deleting.amount, { currency: deleting.currency })} received on ${new Date(deleting.transactionDate).toLocaleDateString("en-GB")}. The record is removed from the queue and kept only in the audit log.`
+            ? fill(copy.deleteBody, {
+                amount: formatMoney(deleting.amount, {
+                  currency: deleting.currency,
+                }),
+                date: formatDate(deleting.transactionDate, locale),
+              })
             : undefined
         }
-        confirmLabel="Delete payment"
+        confirmLabel={copy.deleteConfirm}
         tone="danger"
         requireReason
         reasonMinLength={10}
-        reasonLabel="Why can this payment never belong to a member?"
-        reasonPlaceholder="e.g. This is the association's own transfer between its bank accounts, not a member contribution"
+        reasonLabel={copy.deleteReasonLabel}
+        reasonPlaceholder={copy.deleteReasonPlaceholder}
         onConfirm={handleDelete}
       >
         <div className="space-y-2 text-xs leading-relaxed text-ink-muted">
-          <p>
-            Delete only a payment that will never be attributable — the
-            association&apos;s own transfers, bank charges, or a line the PDF
-            parser read incorrectly.
-          </p>
-          <p>
-            If the same payment arrives again from the bank or in another
-            statement upload, it will reappear here.
-          </p>
+          <p>{copy.deleteNoteOnlyUnattributable}</p>
+          <p>{copy.deleteNoteReappears}</p>
           {deleting?.narration && (
             <p className="flex items-start gap-1.5 rounded-lg bg-background p-2.5">
               <Link2 className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-              Narration: <strong className="text-ink">{deleting.narration}</strong>
+              {copy.narration}{" "}
+              <strong className="text-ink">{deleting.narration}</strong>
             </p>
           )}
         </div>
@@ -528,38 +530,32 @@ export function UnmatchedPaymentsTable({
         onOpenChange={(open) => !open && setBulkMode(null)}
         title={
           bulkMode === "ALL_QUEUED"
-            ? `Delete all ${total} unmatched payments`
-            : `Delete ${checked.size} selected payment${checked.size === 1 ? "" : "s"}`
+            ? fill(copy.bulkAllTitle, { count: total })
+            : pluralize(copy.bulkSelectedTitle, checked.size)
         }
         description={
           bulkMode === "ALL_QUEUED"
-            ? `Every unmatched payment in this association will be removed from the queue — including those on pages you have not opened.`
-            : `The ${checked.size} payment${checked.size === 1 ? "" : "s"} you ticked will be removed from the queue.`
+            ? copy.bulkAllBody
+            : pluralize(copy.bulkSelectedBody, checked.size)
         }
         confirmLabel={
-          bulkMode === "ALL_QUEUED" ? `Delete all ${total}` : "Delete selected"
+          bulkMode === "ALL_QUEUED"
+            ? fill(copy.deleteAll, { count: total })
+            : copy.deleteSelected
         }
         tone="danger"
         requireReason
         reasonMinLength={10}
-        reasonLabel="Why can none of these payments belong to a member?"
-        reasonPlaceholder="e.g. Statement upload was the wrong account and every row was parsed from the association's own transfers"
+        reasonLabel={copy.bulkReasonLabel}
+        reasonPlaceholder={copy.bulkReasonPlaceholder}
         onConfirm={handleBulkDelete}
       >
         <div className="space-y-2 text-xs leading-relaxed text-ink-muted">
-          <p>
-            Each deletion is recorded separately in the audit log against your
-            name, with the full payment record attached.
-          </p>
-          <p>
-            Any payment that has already been credited to a member is skipped
-            automatically — those must be reversed, not deleted — and you will be
-            told how many were skipped.
-          </p>
+          <p>{copy.bulkNoteAudited}</p>
+          <p>{copy.bulkNoteSkipsCredited}</p>
           {bulkMode === "ALL_QUEUED" && (
             <p className="rounded-lg bg-red-50 p-2.5 font-semibold text-red-700">
-              This clears the entire queue. If any of these payments really do
-              belong to a member, that member will not be credited.
+              {copy.bulkNoteClearsQueue}
             </p>
           )}
         </div>

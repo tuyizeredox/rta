@@ -97,15 +97,37 @@ export async function requireRole(
   return context;
 }
 
+/**
+ * Requires a personal member account — a savings/loan record of the caller's
+ * own — whatever role they hold.
+ *
+ * DELIBERATELY NOT `requireRole("MEMBER")`. In a savings association the staff
+ * save too: the treasurer contributes every month and takes loans like anyone
+ * else, and the previous rule meant the person running the association was the
+ * one person who could not see their own balance. Their administrative role is
+ * about what they may do to *other* people's records; it says nothing about
+ * whether they have money of their own here.
+ *
+ * The authorisation this performs is therefore ownership, not role: every page
+ * behind it reads `context.member.id`, which is the caller's own record and
+ * cannot be pointed at anyone else's.
+ *
+ * Someone with no member record is not being refused — there is simply nothing
+ * to show them — so staff are sent to their own dashboard rather than to an
+ * error. A MEMBER-role user without one is a different thing entirely: that is
+ * a broken account, and it fails loudly.
+ */
 export async function requireMember(returnTo?: string): Promise<AuthContext> {
-  const context = await requireRole("MEMBER", returnTo);
+  const context = await requireAuth(returnTo);
 
-  // A MEMBER user with no member record is a broken account, not an
-  // authorisation question — fail rather than render an empty dashboard.
   if (!context.member) {
-    throw new Error(
-      `User ${context.user.id} has role MEMBER but no member record`
-    );
+    if (context.user.role === "MEMBER") {
+      throw new Error(
+        `User ${context.user.id} has role MEMBER but no member record`
+      );
+    }
+
+    redirect(ROLE_HOME[context.user.role]);
   }
 
   return context;
@@ -176,6 +198,26 @@ export async function requireApiRole(
       context
     );
     throw new AuthorizationError("Insufficient role", 403, "FORBIDDEN");
+  }
+
+  return context;
+}
+
+/**
+ * The route-handler counterpart of `requireMember`: the caller must have a
+ * member record of their own. Same reasoning — an administrator requesting a
+ * withdrawal from their own savings is an ordinary member action, and their
+ * role is irrelevant to it.
+ */
+export async function requireApiMember(): Promise<AuthContext> {
+  const context = await requireApiAuth();
+
+  if (!context.member) {
+    throw new AuthorizationError(
+      "This account has no member record",
+      403,
+      "FORBIDDEN"
+    );
   }
 
   return context;

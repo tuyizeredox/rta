@@ -110,3 +110,41 @@
     background-size: 3px 3px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Printing a sign-in card
+   ---------------------------------------------------------------------------
+   A member takes their QR card to a print shop, or prints it on the office's
+   one working printer. Without this the sheet comes out carrying the sidebar,
+   the top bar and a page of navigation around a two-inch square.
+
+   `visibility` rather than `display` is what makes this work: hiding ancestors
+   outright would take the card down with them, whereas hiding everything and
+   then re-showing the card and its descendants leaves the card laid out where
+   it always was. It is then pulled to the top-left of the sheet so it does not
+   print halfway down page two.
+--------------------------------------------------------------------------- */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-card,
+  .print-card * {
+    visibility: visible;
+  }
+
+  .print-card {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border: 1px solid #d4d4d4 !important;
+    box-shadow: none !important;
+  }
+
+  /* Controls belong on the screen, never on the paper. */
+  .print-hidden {
+    display: none !important;
+  }
+}

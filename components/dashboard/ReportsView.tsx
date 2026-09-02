@@ -2,6 +2,9 @@ import Link from "next/link";
 import { AlertTriangle, BarChart3, Trophy } from "lucide-react";
 import { formatMoney, isPositive, subtract } from "@/lib/money";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { statusLabel } from "@/lib/i18n/dashboard/status";
+import { getDashboardCopy } from "@/lib/i18n/server";
+import { formatMonthYear } from "@/lib/i18n/dates";
 import {
   TableWrapper,
   Table,
@@ -22,88 +25,106 @@ import type { ReportBundle } from "@/lib/services/admin-queries";
  * reconcile against a bank statement, and a bar chart cannot be read to two
  * decimal places. The twelve-month movement table is the one time series that
  * earns its place.
+ *
+ * A server component, so it reads the request's language directly rather than
+ * having every label threaded down from the page.
  */
-export function ReportsView({ data }: { data: ReportBundle }) {
+export async function ReportsView({ data }: { data: ReportBundle }) {
+  const { d, locale } = await getDashboardCopy();
+  const copy = d.admin.reports;
+
   return (
     <div className="space-y-8">
       <div className="grid gap-6 lg:grid-cols-2">
         <BreakdownPanel
-          title="Members by status"
+          title={copy.membersByStatus}
           rows={data.membersByStatus.map((r) => ({
             key: r.label,
             label: <StatusBadge status={r.label} size="sm" />,
             count: r.count,
           }))}
-          countHeading="Members"
+          countHeading={copy.headMembers}
+          categoryHeading={copy.headCategory}
+          emptyLabel={copy.nothingRecorded}
+          totalLabel={d.common.total}
         />
 
         <BreakdownPanel
-          title="Loans by status"
+          title={copy.loansByStatus}
           rows={data.loansByStatus.map((r) => ({
             key: r.label,
             label: <StatusBadge status={r.label} size="sm" />,
             count: r.count,
             amount: r.amount,
           }))}
-          countHeading="Loans"
-          amountHeading="Principal"
+          countHeading={copy.headLoans}
+          amountHeading={copy.headPrincipal}
+          categoryHeading={copy.headCategory}
+          emptyLabel={copy.nothingRecorded}
+          totalLabel={d.common.total}
         />
 
         <BreakdownPanel
-          title="Payments by channel"
+          title={copy.paymentsByChannel}
           rows={data.paymentsByChannel.map((r) => ({
             key: r.label,
             label: (
-              <span className="text-sm capitalize text-ink">
-                {r.label.replace(/_/g, " ").toLowerCase()}
+              <span className="text-sm text-ink">
+                {statusLabel(r.label, d.status)}
               </span>
             ),
             count: r.count,
             amount: r.amount,
           }))}
-          countHeading="Payments"
-          amountHeading="Value"
+          countHeading={copy.headPayments}
+          amountHeading={copy.headValue}
+          categoryHeading={copy.headCategory}
+          emptyLabel={copy.nothingRecorded}
+          totalLabel={d.common.total}
         />
 
         <BreakdownPanel
-          title="Ledger movement by type"
+          title={copy.ledgerByType}
           rows={data.transactionsByType.map((r) => ({
             key: r.label,
             label: <StatusBadge status={r.label} size="sm" />,
             count: r.count,
             amount: r.amount,
           }))}
-          countHeading="Entries"
-          amountHeading="Value"
+          countHeading={copy.headEntries}
+          amountHeading={copy.headValue}
+          categoryHeading={copy.headCategory}
+          emptyLabel={copy.nothingRecorded}
+          totalLabel={d.common.total}
         />
       </div>
 
       <section>
         <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-semibold text-ink">
           <BarChart3 className="size-4.5 text-primary" aria-hidden="true" />
-          Deposits and withdrawals, last 12 months
+          {copy.movementTitle}
         </h2>
         <TableWrapper>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Month</TableHead>
-                <TableHead align="right">Deposits</TableHead>
-                <TableHead align="right">Withdrawals</TableHead>
-                <TableHead align="right">Net</TableHead>
+                <TableHead>{copy.month}</TableHead>
+                <TableHead align="right">{copy.deposits}</TableHead>
+                <TableHead align="right">{copy.withdrawals}</TableHead>
+                <TableHead align="right">{copy.net}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {data.monthly.length === 0 ? (
-                <TableEmpty colSpan={4}>
-                  No ledger movement recorded in the last twelve months.
-                </TableEmpty>
+                <TableEmpty colSpan={4}>{copy.noMovement}</TableEmpty>
               ) : (
                 data.monthly.map((row) => {
                   const net = subtract(row.deposits, row.withdrawals);
                   return (
                     <TableRow key={row.month}>
-                      <TableCell className="font-medium text-ink">{row.month}</TableCell>
+                      <TableCell className="font-medium text-ink">
+                        {formatMonthYear(row.month, locale)}
+                      </TableCell>
                       <TableCell align="right" tabular className="text-emerald-700">
                         {formatMoney(row.deposits, { showSymbol: false })}
                       </TableCell>
@@ -126,19 +147,19 @@ export function ReportsView({ data }: { data: ReportBundle }) {
         <section>
           <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-semibold text-ink">
             <Trophy className="size-4.5 text-primary" aria-hidden="true" />
-            Largest savers
+            {copy.largestSavers}
           </h2>
           <TableWrapper>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead align="right">Balance</TableHead>
+                  <TableHead>{d.common.member}</TableHead>
+                  <TableHead align="right">{d.common.balance}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.topSavers.length === 0 ? (
-                  <TableEmpty colSpan={2}>No savings accounts yet.</TableEmpty>
+                  <TableEmpty colSpan={2}>{copy.noSavingsAccounts}</TableEmpty>
                 ) : (
                   data.topSavers.map((saver) => (
                     <TableRow key={saver.memberId}>
@@ -167,22 +188,20 @@ export function ReportsView({ data }: { data: ReportBundle }) {
         <section>
           <h2 className="mb-3 flex items-center gap-2 font-heading text-lg font-semibold text-ink">
             <AlertTriangle className="size-4.5 text-red-600" aria-hidden="true" />
-            Arrears
+            {copy.arrearsTitle}
           </h2>
           <TableWrapper>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Member</TableHead>
-                  <TableHead align="right">Days late</TableHead>
-                  <TableHead align="right">Overdue</TableHead>
+                  <TableHead>{d.common.member}</TableHead>
+                  <TableHead align="right">{copy.daysLate}</TableHead>
+                  <TableHead align="right">{copy.overdue}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {data.arrears.length === 0 ? (
-                  <TableEmpty colSpan={3}>
-                    No loan is currently in arrears.
-                  </TableEmpty>
+                  <TableEmpty colSpan={3}>{copy.noArrears}</TableEmpty>
                 ) : (
                   data.arrears.map((row) => (
                     <TableRow key={row.reference}>
@@ -220,6 +239,9 @@ function BreakdownPanel({
   rows,
   countHeading,
   amountHeading,
+  categoryHeading,
+  emptyLabel,
+  totalLabel,
 }: {
   title: string;
   rows: {
@@ -230,6 +252,9 @@ function BreakdownPanel({
   }[];
   countHeading: string;
   amountHeading?: string;
+  categoryHeading: string;
+  emptyLabel: string;
+  totalLabel: string;
 }) {
   const total = rows.reduce((sum, row) => sum + row.count, 0);
 
@@ -240,7 +265,7 @@ function BreakdownPanel({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Category</TableHead>
+              <TableHead>{categoryHeading}</TableHead>
               <TableHead align="right">{countHeading}</TableHead>
               {amountHeading && <TableHead align="right">{amountHeading}</TableHead>}
             </TableRow>
@@ -248,7 +273,7 @@ function BreakdownPanel({
           <TableBody>
             {rows.length === 0 ? (
               <TableEmpty colSpan={amountHeading ? 3 : 2}>
-                Nothing recorded yet.
+                {emptyLabel}
               </TableEmpty>
             ) : (
               rows.map((row) => (
@@ -271,7 +296,7 @@ function BreakdownPanel({
         </Table>
         {rows.length > 0 && (
           <div className="flex items-center justify-between border-t border-border px-5 py-3 text-sm">
-            <span className="font-semibold text-ink-muted">Total</span>
+            <span className="font-semibold text-ink-muted">{totalLabel}</span>
             <span className="font-heading font-bold tabular-nums text-ink">{total}</span>
           </div>
         )}

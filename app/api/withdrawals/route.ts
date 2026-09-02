@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 import { z } from "zod";
-import { requireApiRole } from "@/lib/auth/guards";
+import { requireApiMember } from "@/lib/auth/guards";
 import { requestWithdrawal, WithdrawalError } from "@/lib/services/withdrawals";
 import { getMemberWithdrawals } from "@/lib/services/member-queries";
 import {
@@ -26,7 +26,7 @@ const schema = z.object({
 
 /** GET /api/withdrawals — the caller's own withdrawal history. */
 export const GET = withErrorHandling(async () => {
-  const context = await requireApiRole("MEMBER");
+  const context = await requireApiMember();
   const withdrawals = await getMemberWithdrawals(context.member!.id);
   return apiSuccess({ withdrawals });
 });
@@ -38,7 +38,7 @@ export const GET = withErrorHandling(async () => {
  * would let any member request a withdrawal from anyone else's account.
  */
 export const POST = withErrorHandling(async (request: NextRequest) => {
-  const context = await requireApiRole("MEMBER");
+  const context = await requireApiMember();
 
   const ip = await getClientIp();
   const limit = checkRateLimit(

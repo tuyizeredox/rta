@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
 import { z } from "zod";
-import { requireApiRole } from "@/lib/auth/guards";
+import { requireApiMember } from "@/lib/auth/guards";
 import { submitLoanApplication } from "@/lib/services/loans";
 import { notify, NOTIFICATION_EVENTS } from "@/lib/notifications";
 import {
@@ -47,7 +47,7 @@ const schema = z.object({
  * decision.
  */
 export const POST = withErrorHandling(async (request: NextRequest) => {
-  const context = await requireApiRole("MEMBER");
+  const context = await requireApiMember();
 
   const ip = await getClientIp();
   const limit = checkRateLimit(

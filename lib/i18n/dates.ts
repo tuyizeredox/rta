@@ -1,3 +1,4 @@
+import { DEFAULT_LOCALE } from "@/lib/i18n/locale";
 import type { Locale } from "@/types";
 
 /**
@@ -48,7 +49,7 @@ const EN_DATE = { day: "numeric", month: "short", year: "numeric" } as const;
 /** e.g. "17 Aug 2026" / "17 Kan 2026". An empty date renders as a dash. */
 export function formatDate(
   value: Date | string | null | undefined,
-  locale: Locale = "en"
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -63,7 +64,7 @@ export function formatDate(
 /** e.g. "17 August 2026", for a heading or a statement cover. */
 export function formatLongDate(
   value: Date | string | null | undefined,
-  locale: Locale = "en"
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -82,7 +83,7 @@ export function formatLongDate(
 /** e.g. "17 Aug, 14:32" — a day and a clock time, no year. */
 export function formatDateTime(
   value: Date | string | null | undefined,
-  locale: Locale = "en"
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   if (!value) return "—";
   const date = new Date(value);
@@ -104,7 +105,7 @@ export function formatDateTime(
  *
  * Charts get the short form because an axis has no room for "Gashyantare".
  */
-export function formatMonthLabel(month: string, locale: Locale = "en"): string {
+export function formatMonthLabel(month: string, locale: Locale = DEFAULT_LOCALE): string {
   const [year, m] = month.split("-");
   const index = Number(m) - 1;
   if (Number.isNaN(index) || index < 0 || index > 11) return month;
@@ -115,10 +116,26 @@ export function formatMonthLabel(month: string, locale: Locale = "en"): string {
   });
 }
 
+/**
+ * A month and its year from a "YYYY-MM" key, e.g. "Aug 2026" / "Kan 2026".
+ *
+ * For tables rather than axes: twelve rows spanning a year-end need the year
+ * to be readable, where a chart axis does not have room for it.
+ */
+export function formatMonthYear(
+  month: string,
+  locale: Locale = DEFAULT_LOCALE
+): string {
+  const [year, m] = month.split("-");
+  const index = Number(m) - 1;
+  if (Number.isNaN(index) || index < 0 || index > 11) return month;
+  return `${formatMonthLabel(month, locale)} ${year}`;
+}
+
 /** Day and month only, for a compact timestamp beside a notification. */
 export function formatDayMonth(
   value: Date | string,
-  locale: Locale = "en"
+  locale: Locale = DEFAULT_LOCALE
 ): string {
   const date = new Date(value);
   if (locale === "rw") {

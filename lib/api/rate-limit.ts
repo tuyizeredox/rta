@@ -43,6 +43,11 @@ export const RATE_LIMITS = {
   REGISTER: { limit: 5, windowMs: 60 * 60_000, blockMs: 30 * 60_000 },
   PASSWORD_RESET: { limit: 5, windowMs: 60 * 60_000, blockMs: 30 * 60_000 },
   VERIFY_CODE: { limit: 10, windowMs: 15 * 60_000, blockMs: 15 * 60_000 },
+  /// Scanning a sign-in QR code. Higher than LOGIN because a legitimate
+  /// scanner sometimes fires twice, and because a shared workshop connection
+  /// can put several members behind one address; low enough that guessing at
+  /// 43 characters of base64 is not worth attempting.
+  QR_SCAN: { limit: 20, windowMs: 15 * 60_000, blockMs: 15 * 60_000 },
   /// Initiating a payment or withdrawal — low volume by nature.
   FINANCIAL_WRITE: { limit: 20, windowMs: 60_000 },
   /// Provider webhooks arrive in bursts during reconciliation.

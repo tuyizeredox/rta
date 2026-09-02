@@ -22,9 +22,24 @@ const MEMBER_PREFIX = "/dashboard";
 const ADMIN_PREFIX = "/admin";
 const SUPER_ADMIN_PREFIX = "/super-admin";
 
-/** Routes that require a session, and the role each demands. */
+/** Personal account pages — status, sign-in QR code, password. Every signed-in
+ *  person has these, so they demand a session and nothing more. */
+const ACCOUNT_PREFIX = "/account";
+
+/**
+ * Routes that require a session, and the role each demands.
+ *
+ * `/dashboard` accepts every role, which looks surprising next to the two
+ * below it. It is not a hole: those pages are the member's *own* savings and
+ * loans, and in a savings association the staff save too — the treasurer has a
+ * balance like anyone else. What decides whether they see anything is
+ * `requireMember` in the page, which asks whether the caller has a member
+ * record of their own and sends them away if they do not. Role was never the
+ * right question there; ownership is, and ownership needs the database.
+ */
 const PROTECTED_PREFIXES: { prefix: string; roles: string[] }[] = [
-  { prefix: MEMBER_PREFIX, roles: ["MEMBER"] },
+  { prefix: MEMBER_PREFIX, roles: ["MEMBER", "ADMIN", "SUPER_ADMIN"] },
+  { prefix: ACCOUNT_PREFIX, roles: ["MEMBER", "ADMIN", "SUPER_ADMIN"] },
   { prefix: ADMIN_PREFIX, roles: ["ADMIN", "SUPER_ADMIN"] },
   { prefix: SUPER_ADMIN_PREFIX, roles: ["SUPER_ADMIN"] },
 ];

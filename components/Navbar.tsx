@@ -12,9 +12,10 @@ import { useScrolled } from "@/hooks/use-scrolled";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { Locale } from "@/types";
 
+/** Kinyarwanda first, because it is the default and the majority language. */
 const LANGUAGES: { code: Locale; label: string }[] = [
-  { code: "en", label: "English" },
   { code: "rw", label: "Ikinyarwanda" },
+  { code: "en", label: "English" },
 ];
 
 export default function Navbar() {

@@ -6,6 +6,7 @@ import { AlertTriangle, Banknote, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { statusLabel } from "@/lib/i18n/dashboard/status";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,6 +19,9 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { formatMoney, gt } from "@/lib/money";
+import { useLanguage } from "@/components/LanguageProvider";
+import { fill } from "@/lib/i18n/fill";
+import { formatDate } from "@/lib/i18n/dates";
 
 interface Withdrawal {
   id: string;
@@ -55,6 +59,8 @@ export function WithdrawalReviewTable({
   canPayout: boolean;
 }) {
   const router = useRouter();
+  const { d, locale } = useLanguage();
+  const copy = d.admin.withdrawals;
   const [approving, setApproving] = useState<Withdrawal | null>(null);
   const [rejecting, setRejecting] = useState<Withdrawal | null>(null);
   const [paying, setPaying] = useState<Withdrawal | null>(null);
@@ -80,7 +86,7 @@ export function WithdrawalReviewTable({
 
     const payload = await response.json();
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "The action could not be completed");
+      throw new Error(payload?.error?.message ?? copy.actionFailed);
     }
 
     setPayoutReference("");
@@ -99,13 +105,13 @@ export function WithdrawalReviewTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Requested</TableHead>
-              <TableHead align="right">Amount</TableHead>
-              <TableHead align="right">Balance</TableHead>
-              <TableHead>Payout to</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead align="right">Action</TableHead>
+              <TableHead>{d.common.member}</TableHead>
+              <TableHead>{copy.colRequested}</TableHead>
+              <TableHead align="right">{d.common.amount}</TableHead>
+              <TableHead align="right">{d.common.balance}</TableHead>
+              <TableHead>{copy.colPayoutTo}</TableHead>
+              <TableHead>{d.common.status}</TableHead>
+              <TableHead align="right">{copy.colAction}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -124,11 +130,7 @@ export function WithdrawalReviewTable({
                   </TableCell>
 
                   <TableCell className="whitespace-nowrap text-sm text-ink-muted">
-                    {new Date(w.requestedAt).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {formatDate(w.requestedAt, locale)}
                     {w.reason && (
                       <span className="mt-0.5 block max-w-[180px] truncate text-xs">
                         {w.reason}
@@ -142,7 +144,9 @@ export function WithdrawalReviewTable({
                     </span>
                     {Number(w.fee) > 0 && (
                       <span className="mt-0.5 block text-xs text-ink-muted">
-                        net {formatMoney(w.netAmount, { showSymbol: false })}
+                        {fill(copy.net, {
+                          amount: formatMoney(w.netAmount, { showSymbol: false }),
+                        })}
                       </span>
                     )}
                   </TableCell>
@@ -156,14 +160,14 @@ export function WithdrawalReviewTable({
                     {insufficientNow && (
                       <span className="mt-0.5 flex items-center justify-end gap-1 text-[11px] font-semibold text-red-600">
                         <AlertTriangle className="size-3" aria-hidden="true" />
-                        below request
+                        {copy.belowRequest}
                       </span>
                     )}
                   </TableCell>
 
                   <TableCell className="text-sm text-ink-muted">
-                    <span className="block capitalize">
-                      {w.channel.replace(/_/g, " ").toLowerCase()}
+                    <span className="block">
+                      {statusLabel(w.channel, d.status)}
                     </span>
                     <span className="block text-xs">
                       {w.destinationDetail ?? w.memberPhone ?? "—"}
@@ -186,10 +190,12 @@ export function WithdrawalReviewTable({
                             }}
                           >
                             <Banknote className="size-3.5" aria-hidden="true" />
-                            Record payout
+                            {copy.recordPayout}
                           </Button>
                         ) : (
-                          <span className="text-xs text-ink-muted">Awaiting payout</span>
+                          <span className="text-xs text-ink-muted">
+                            {copy.awaitingPayout}
+                          </span>
                         )
                       ) : canApprove ? (
                         <>
@@ -201,7 +207,7 @@ export function WithdrawalReviewTable({
                             }}
                           >
                             <Check className="size-3.5" aria-hidden="true" />
-                            Approve
+                            {d.common.approve}
                           </Button>
                           <Button
                             size="sm"
@@ -212,11 +218,13 @@ export function WithdrawalReviewTable({
                             }}
                           >
                             <X className="size-3.5" aria-hidden="true" />
-                            Decline
+                            {copy.decline}
                           </Button>
                         </>
                       ) : (
-                        <span className="text-xs text-ink-muted">No permission</span>
+                        <span className="text-xs text-ink-muted">
+                          {copy.noPermission}
+                        </span>
                       )}
                     </div>
                   </TableCell>
@@ -230,23 +238,26 @@ export function WithdrawalReviewTable({
       <ConfirmDialog
         open={approving !== null}
         onOpenChange={(open) => !open && setApproving(null)}
-        title="Approve this withdrawal?"
+        title={copy.approveTitle}
         description={
           approving
-            ? `${approving.memberName} will be approved to withdraw ${formatMoney(approving.amount)}. Their balance is not debited until you record the payout.`
+            ? fill(copy.approveBody, {
+                name: approving.memberName,
+                amount: formatMoney(approving.amount),
+              })
             : undefined
         }
-        confirmLabel="Approve"
+        confirmLabel={d.common.approve}
         onConfirm={async () => {
           if (approving) await act(approving, "approve");
         }}
       >
         {approving && gt(approving.amount, approving.currentBalance) && (
           <Alert variant="error">
-            This member&rsquo;s balance is now{" "}
-            {formatMoney(approving.currentBalance)}, which is less than the{" "}
-            {formatMoney(approving.amount)} requested. The payout will be refused
-            unless they deposit more first.
+            {fill(copy.approveShortfall, {
+              balance: formatMoney(approving.currentBalance),
+              amount: formatMoney(approving.amount),
+            })}
           </Alert>
         )}
       </ConfirmDialog>
@@ -254,17 +265,20 @@ export function WithdrawalReviewTable({
       <ConfirmDialog
         open={rejecting !== null}
         onOpenChange={(open) => !open && setRejecting(null)}
-        title="Decline this withdrawal?"
+        title={copy.declineTitle}
         description={
           rejecting
-            ? `${rejecting.memberName} will be told their request for ${formatMoney(rejecting.amount)} was declined, and the hold on their balance will be released.`
+            ? fill(copy.declineBody, {
+                name: rejecting.memberName,
+                amount: formatMoney(rejecting.amount),
+              })
             : undefined
         }
-        confirmLabel="Decline"
+        confirmLabel={copy.decline}
         tone="danger"
         requireReason
-        reasonLabel="Why is this being declined?"
-        reasonPlaceholder="e.g. Outstanding loan repayment must be settled first"
+        reasonLabel={copy.declineReasonLabel}
+        reasonPlaceholder={copy.declineReasonPlaceholder}
         onConfirm={async (reason) => {
           if (rejecting) await act(rejecting, "reject", { reason });
         }}
@@ -273,30 +287,31 @@ export function WithdrawalReviewTable({
       <ConfirmDialog
         open={paying !== null}
         onOpenChange={(open) => !open && setPaying(null)}
-        title="Record this payout?"
+        title={copy.payoutTitle}
         description={
           paying
-            ? `Confirm that ${formatMoney(paying.netAmount)} has actually been sent to ${paying.memberName}. This debits their savings account immediately and cannot be undone except by a reversal.`
+            ? fill(copy.payoutBody, {
+                amount: formatMoney(paying.netAmount),
+                name: paying.memberName,
+              })
             : undefined
         }
-        confirmLabel="Confirm payout"
+        confirmLabel={copy.payoutConfirm}
         onConfirm={async () => {
           if (paying) await act(paying, "payout", { externalReference: payoutReference });
         }}
       >
         <div className="space-y-2">
           <label htmlFor="payout-ref" className="block text-sm font-semibold text-ink">
-            Bank or mobile money reference (optional)
+            {copy.payoutReferenceLabel}
           </label>
           <Input
             id="payout-ref"
             value={payoutReference}
             onChange={(e) => setPayoutReference(e.target.value)}
-            placeholder="e.g. the transfer confirmation code"
+            placeholder={copy.payoutReferencePlaceholder}
           />
-          <p className="text-xs text-ink-muted">
-            Recording it makes the payout traceable back to the bank record.
-          </p>
+          <p className="text-xs text-ink-muted">{copy.payoutReferenceHint}</p>
         </div>
       </ConfirmDialog>
     </>

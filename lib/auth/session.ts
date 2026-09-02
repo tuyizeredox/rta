@@ -114,26 +114,38 @@ export async function createSession(
   return { token, sessionId: session.id, expiresAt };
 }
 
-/** Writes the session cookie. */
-export async function setSessionCookie(
-  token: string,
-  expiresAt: Date
-): Promise<void> {
+/**
+ * Attributes for the session cookie, in one place.
+ *
+ * Exported because not every caller writes the cookie through `cookies()`:
+ * the QR sign-in handler builds its own redirect Response and attaches the
+ * cookie to it directly. Two copies of these flags would eventually disagree,
+ * and the one that drifted would be the one that dropped `httpOnly`.
+ */
+export function sessionCookieOptions(expiresAt: Date) {
   const env = getEnv();
-  const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE_NAME, token, {
+  return {
     // httpOnly keeps the token out of reach of any injected script — the
     // difference between an XSS bug and an XSS bug that drains accounts.
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     // `lax` still sends the cookie on top-level navigation (so email links
-    // work) but not on cross-site POSTs, which is the CSRF vector that matters
-    // for the money-moving endpoints.
-    sameSite: "lax",
+    // and scanned QR codes work) but not on cross-site POSTs, which is the
+    // CSRF vector that matters for the money-moving endpoints.
+    sameSite: "lax" as const,
     path: "/",
     expires: expiresAt,
-  });
+  };
+}
+
+/** Writes the session cookie. */
+export async function setSessionCookie(
+  token: string,
+  expiresAt: Date
+): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.set(SESSION_COOKIE_NAME, token, sessionCookieOptions(expiresAt));
 }
 
 export async function clearSessionCookie(): Promise<void> {

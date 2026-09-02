@@ -11,7 +11,18 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Alert } from "@/components/ui/alert";
 import { UnmatchedPaymentsTable } from "@/components/dashboard/UnmatchedPaymentsTable";
 
-export const metadata: Metadata = { title: "Unmatched payments | RTA" };
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.admin.payments.title} | RTA`,
+  };
+}
+
 export const dynamic = "force-dynamic";
 
 /**

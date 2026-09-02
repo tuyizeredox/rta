@@ -2,8 +2,10 @@ import type { Locale } from "@/types";
 import { nav, type NavCopy } from "./nav";
 import { shell, type ShellCopy } from "./shell";
 import { common, type CommonCopy } from "./common";
+import { status, type StatusCopy } from "./status";
 import { forms, type FormsCopy } from "./forms";
 import { auth, type AuthCopy } from "./auth";
+import { account, type AccountCopy } from "./account";
 import { member, type MemberCopy } from "./member";
 import { admin, type AdminCopy } from "./admin";
 import { platform, type PlatformCopy } from "./platform";
@@ -37,8 +39,10 @@ export interface DashboardDictionary {
   nav: NavCopy;
   shell: ShellCopy;
   common: CommonCopy;
+  status: StatusCopy;
   forms: FormsCopy;
   auth: AuthCopy;
+  account: AccountCopy;
   member: MemberCopy;
   admin: AdminCopy;
   platform: PlatformCopy;
@@ -50,8 +54,10 @@ const dashboardDictionary: Record<Locale, DashboardDictionary> = {
     nav: nav.en,
     shell: shell.en,
     common: common.en,
+    status: status.en,
     forms: forms.en,
     auth: auth.en,
+    account: account.en,
     member: member.en,
     admin: admin.en,
     platform: platform.en,
@@ -61,8 +67,10 @@ const dashboardDictionary: Record<Locale, DashboardDictionary> = {
     nav: nav.rw,
     shell: shell.rw,
     common: common.rw,
+    status: status.rw,
     forms: forms.rw,
     auth: auth.rw,
+    account: account.rw,
     member: member.rw,
     admin: admin.rw,
     platform: platform.rw,

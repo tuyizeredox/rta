@@ -11,7 +11,18 @@ import { StatCard, StatGrid } from "@/components/ui/stat-card";
 import { ReportsView } from "@/components/dashboard/ReportsView";
 import { AlertTriangle, HandCoins, PiggyBank, Users } from "lucide-react";
 
-export const metadata: Metadata = { title: "Reports | RTA" };
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.admin.reports.title} | RTA`,
+  };
+}
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminReportsPage() {

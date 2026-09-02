@@ -16,6 +16,10 @@ import {
 } from "@/components/ui/select";
 import { formatMoney, gt, lt, parseMoneyInput } from "@/lib/money";
 import { generateSchedule } from "@/lib/services/loan-calculator";
+import { useLanguage } from "@/components/LanguageProvider";
+import { fill, pluralize, split } from "@/lib/i18n/fill";
+import { formatDate } from "@/lib/i18n/dates";
+import type { MemberCopy } from "@/lib/i18n/dashboard/member";
 import type { ChargeType, InterestMethod, RepaymentFrequency } from "@/lib/generated/prisma/enums";
 
 /**
@@ -56,13 +60,17 @@ interface Product {
   eligible: boolean;
 }
 
-const FREQUENCY_LABELS: Record<string, string> = {
-  DAILY: "Daily",
-  WEEKLY: "Weekly",
-  BIWEEKLY: "Every two weeks",
-  MONTHLY: "Monthly",
-  QUARTERLY: "Quarterly",
-};
+/**
+ * A repayment frequency in the reader's language.
+ *
+ * The dictionary keys carry the enum name so a new frequency in the schema is
+ * a missing key rather than a silently English label; an unknown value falls
+ * back to the raw enum, which is visible enough to get fixed.
+ */
+function frequencyLabel(value: string, copy: MemberCopy["apply"]): string {
+  const key = `freq${value}` as keyof MemberCopy["apply"];
+  return (copy[key] as string | undefined) ?? value;
+}
 
 export function LoanApplicationForm({
   products,
@@ -74,6 +82,8 @@ export function LoanApplicationForm({
   membershipMonths: number;
 }) {
   const router = useRouter();
+  const { d, locale } = useLanguage();
+  const copy = d.member.apply;
 
   const [productId, setProductId] = useState(
     products.find((p) => p.eligible)?.id ?? products[0].id
@@ -122,24 +132,33 @@ export function LoanApplicationForm({
     const parsed = parseMoneyInput(amount, { allowZero: false });
     if (!parsed.ok) return null;
     if (lt(parsed.value, product.minAmount)) {
-      return `The smallest loan under ${product.name} is ${formatMoney(product.minAmount)}`;
+      return fill(copy.amountTooSmall, {
+        product: product.name,
+        amount: formatMoney(product.minAmount),
+      });
     }
     if (gt(parsed.value, product.maxEligible)) {
-      return `Based on your savings of ${formatMoney(savingsBalance)}, you can borrow up to ${formatMoney(product.maxEligible)}`;
+      return fill(copy.amountTooLarge, {
+        savings: formatMoney(savingsBalance),
+        amount: formatMoney(product.maxEligible),
+      });
     }
     return null;
-  }, [amount, product, savingsBalance]);
+  }, [amount, product, savingsBalance, copy]);
 
   const termIssue =
     Number(effectiveTerm) < product.minTermMonths ||
     Number(effectiveTerm) > product.maxTermMonths
-      ? `The repayment period must be between ${product.minTermMonths} and ${product.maxTermMonths} months`
+      ? fill(copy.termIssue, {
+          min: product.minTermMonths,
+          max: product.maxTermMonths,
+        })
       : null;
 
   const guarantorIssue =
     product.requiresGuarantors &&
     guarantors.filter((g) => g.fullName.trim()).length < product.minimumGuarantors
-      ? `This product requires ${product.minimumGuarantors} guarantor(s)`
+      ? pluralize(copy.guarantorsMissing, product.minimumGuarantors)
       : null;
 
   const canSubmit =
@@ -177,7 +196,7 @@ export function LoanApplicationForm({
 
       if (!response.ok) {
         if (payload?.error?.details) setFieldErrors(payload.error.details);
-        setError(payload?.error?.message ?? "Could not submit your application");
+        setError(payload?.error?.message ?? copy.submitFailed);
         setSubmitting(false);
         return;
       }
@@ -185,20 +204,24 @@ export function LoanApplicationForm({
       setSuccess(payload.reference);
       router.refresh();
     } catch {
-      setError("Could not reach the server. Check your connection and try again.");
+      setError(d.common.serverUnreachable);
       setSubmitting(false);
     }
   }
 
+  // The reference is bold mid-sentence, and Kinyarwanda does not place it
+  // where English does, so the sentence is split around the placeholder.
+  const [successBefore, successAfter] = split(copy.successBody, "reference");
+
   if (success) {
     return (
-      <Alert variant="success" title="Application submitted">
-        Your loan application <strong>{success}</strong> has been received. You
-        will be notified once it has been reviewed.{" "}
+      <Alert variant="success" title={copy.successTitle}>
+        {successBefore}
+        <strong>{success}</strong>
+        {successAfter}{" "}
         <a href="/dashboard/loans" className="font-semibold underline">
-          Track it here
+          {copy.trackIt}
         </a>
-        .
       </Alert>
     );
   }
@@ -209,7 +232,7 @@ export function LoanApplicationForm({
         {error && <Alert variant="error">{error}</Alert>}
 
         {fieldErrors._ && (
-          <Alert variant="error" title="You are not eligible for this loan">
+          <Alert variant="error" title={copy.ineligibleTitle}>
             <ul className="mt-1 list-inside list-disc space-y-0.5">
               {fieldErrors._.map((message) => (
                 <li key={message}>{message}</li>
@@ -219,7 +242,7 @@ export function LoanApplicationForm({
         )}
 
         <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
-          <Field id="loan-product" label="Loan product" required>
+          <Field id="loan-product" label={copy.productLabel} required>
             {() => (
               <Select value={productId} onValueChange={setProductId}>
                 <SelectTrigger id="loan-product">
@@ -228,7 +251,10 @@ export function LoanApplicationForm({
                 <SelectContent>
                   {products.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
-                      {p.name} — {p.interestRate}% p.a.
+                      {fill(copy.productOption, {
+                        name: p.name,
+                        rate: p.interestRate,
+                      })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -244,21 +270,31 @@ export function LoanApplicationForm({
 
           {!product.eligible && (
             <Alert variant="warning" className="mt-4">
-              You do not currently meet the requirements for this product. It needs
-              at least {formatMoney(product.minimumSavings)} in savings
-              {product.minimumMembershipMonths > 0 &&
-                ` and ${product.minimumMembershipMonths} months of membership`}
-              . You have {formatMoney(savingsBalance)} and {membershipMonths} month
-              {membershipMonths === 1 ? "" : "s"}.
+              {product.minimumMembershipMonths > 0
+                ? fill(copy.notEligibleSavingsTenure, {
+                    savings: formatMoney(product.minimumSavings),
+                    required: pluralize(
+                      copy.monthsCount,
+                      product.minimumMembershipMonths
+                    ),
+                    balance: formatMoney(savingsBalance),
+                    actual: pluralize(copy.monthsCount, membershipMonths),
+                  })
+                : fill(copy.notEligibleSavings, {
+                    savings: formatMoney(product.minimumSavings),
+                    balance: formatMoney(savingsBalance),
+                  })}
             </Alert>
           )}
 
           <div className="mt-5 grid gap-5 sm:grid-cols-2">
             <Field
               id="loan-amount"
-              label="Amount you need"
+              label={copy.amountLabel}
               error={amountIssue ?? fieldErrors.amount}
-              hint={`Up to ${formatMoney(product.maxEligible)} based on your savings`}
+              hint={fill(copy.amountHint, {
+                amount: formatMoney(product.maxEligible),
+              })}
               required
             >
               {(props) => (
@@ -274,9 +310,12 @@ export function LoanApplicationForm({
 
             <Field
               id="loan-term"
-              label="Repayment period (months)"
+              label={copy.termLabel}
               error={termIssue}
-              hint={`Between ${product.minTermMonths} and ${product.maxTermMonths} months`}
+              hint={fill(copy.termHint, {
+                min: product.minTermMonths,
+                max: product.maxTermMonths,
+              })}
               required
             >
               {(props) => (
@@ -292,7 +331,7 @@ export function LoanApplicationForm({
           </div>
 
           <div className="mt-5">
-            <Field id="loan-frequency" label="Repayment frequency" required>
+            <Field id="loan-frequency" label={copy.frequencyLabel} required>
               {() => (
                 <Select
                   value={effectiveFrequency}
@@ -307,7 +346,7 @@ export function LoanApplicationForm({
                       : [product.defaultFrequency]
                     ).map((f) => (
                       <SelectItem key={f} value={f}>
-                        {FREQUENCY_LABELS[f] ?? f}
+                        {frequencyLabel(f, copy)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -319,9 +358,9 @@ export function LoanApplicationForm({
           <div className="mt-5">
             <Field
               id="loan-purpose"
-              label="What is the loan for?"
+              label={copy.purposeLabel}
               error={fieldErrors.purpose}
-              hint="Be specific — it helps the review committee decide"
+              hint={copy.purposeHint}
               required
             >
               {(props) => (
@@ -329,7 +368,7 @@ export function LoanApplicationForm({
                   {...props}
                   value={purpose}
                   onChange={(e) => setPurpose(e.target.value)}
-                  placeholder="e.g. Buy two industrial sewing machines to take on school uniform contracts"
+                  placeholder={copy.purposePlaceholder}
                   rows={3}
                 />
               )}
@@ -340,11 +379,10 @@ export function LoanApplicationForm({
         {product.requiresGuarantors && (
           <div className="rounded-2xl border border-border bg-surface p-5 shadow-card">
             <h3 className="font-heading text-base font-semibold text-ink">
-              Guarantors
+              {copy.guarantorsTitle}
             </h3>
             <p className="mt-1 text-sm text-ink-muted">
-              This product requires {product.minimumGuarantors} guarantor
-              {product.minimumGuarantors === 1 ? "" : "s"}.
+              {pluralize(copy.guarantorsRequired, product.minimumGuarantors)}
             </p>
 
             <div className="mt-4 space-y-3">
@@ -358,8 +396,12 @@ export function LoanApplicationForm({
                         next[index] = { ...next[index], fullName: e.target.value, phone: next[index]?.phone ?? "" };
                         setGuarantors(next);
                       }}
-                      placeholder={`Guarantor ${index + 1} full name`}
-                      aria-label={`Guarantor ${index + 1} full name`}
+                      placeholder={fill(copy.guarantorName, {
+                        number: index + 1,
+                      })}
+                      aria-label={fill(copy.guarantorName, {
+                        number: index + 1,
+                      })}
                     />
                     <Input
                       value={guarantors[index]?.phone ?? ""}
@@ -368,8 +410,10 @@ export function LoanApplicationForm({
                         next[index] = { ...next[index], phone: e.target.value, fullName: next[index]?.fullName ?? "" };
                         setGuarantors(next);
                       }}
-                      placeholder="Phone number"
-                      aria-label={`Guarantor ${index + 1} phone`}
+                      placeholder={d.common.phone}
+                      aria-label={fill(copy.guarantorPhone, {
+                        number: index + 1,
+                      })}
                     />
                   </div>
                 )
@@ -386,12 +430,12 @@ export function LoanApplicationForm({
           {submitting ? (
             <>
               <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              Submitting…
+              {d.common.submitting}
             </>
           ) : (
             <>
               <Send className="size-4" aria-hidden="true" />
-              Submit application
+              {copy.submitApplication}
             </>
           )}
         </Button>
@@ -401,31 +445,46 @@ export function LoanApplicationForm({
       <aside className="lg:col-span-1">
         <div className="sticky top-24 rounded-2xl border border-primary/25 bg-primary-50 p-5">
           <h3 className="font-heading text-base font-semibold text-primary-hover">
-            What you would repay
+            {copy.previewTitle}
           </h3>
 
           {!preview ? (
             <p className="mt-3 text-sm text-primary-hover/80">
-              Enter an amount and a repayment period to see your schedule.
+              {copy.previewEmpty}
             </p>
           ) : (
             <>
               <dl className="mt-4 space-y-2.5 text-sm">
-                <Line label="Loan amount" value={formatMoney(preview.principal)} />
-                <Line label="Processing fee" value={formatMoney(preview.processingFee)} />
-                <Line label="Insurance fee" value={formatMoney(preview.insuranceFee)} />
                 <Line
-                  label="You receive"
+                  label={copy.lineLoanAmount}
+                  value={formatMoney(preview.principal)}
+                />
+                <Line
+                  label={copy.lineProcessingFee}
+                  value={formatMoney(preview.processingFee)}
+                />
+                <Line
+                  label={copy.lineInsuranceFee}
+                  value={formatMoney(preview.insuranceFee)}
+                />
+                <Line
+                  label={copy.lineYouReceive}
                   value={formatMoney(preview.netDisbursement)}
                   strong
                 />
                 <div className="border-t border-primary/20 pt-2.5">
                   <Line
-                    label={`Interest (${product.interestRate}% ${product.interestMethod === "FLAT" ? "flat" : "reducing"})`}
+                    label={fill(copy.lineInterest, {
+                      rate: product.interestRate,
+                      method:
+                        product.interestMethod === "FLAT"
+                          ? copy.methodFlat
+                          : copy.methodReducing,
+                    })}
                     value={formatMoney(preview.totalInterest)}
                   />
                   <Line
-                    label="Total to repay"
+                    label={copy.lineTotalRepay}
                     value={formatMoney(preview.totalPayable)}
                     strong
                   />
@@ -434,25 +493,24 @@ export function LoanApplicationForm({
 
               <div className="mt-4 rounded-xl bg-white/70 p-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-primary-hover">
-                  {FREQUENCY_LABELS[effectiveFrequency] ?? effectiveFrequency} payment
+                  {fill(copy.paymentLabel, {
+                    frequency: frequencyLabel(effectiveFrequency, copy),
+                  })}
                 </p>
                 <p className="mt-1 font-heading text-xl font-bold text-primary-hover">
                   {formatMoney(preview.instalments[1]?.totalDue ?? preview.instalments[0].totalDue)}
                 </p>
                 <p className="mt-1 text-xs text-primary-hover/75">
-                  {preview.instalments.length} payments · first due{" "}
-                  {preview.instalments[0].dueDate.toLocaleDateString("en-GB", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
+                  {fill(copy.paymentsCount, {
+                    count: preview.instalments.length,
+                    date: formatDate(preview.instalments[0].dueDate, locale),
                   })}
                 </p>
               </div>
 
               <p className="mt-3 flex items-start gap-1.5 text-xs text-primary-hover/75">
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                The first payment includes the fees, so it is larger than the rest.
-                Final terms are confirmed on approval.
+                {copy.previewNote}
               </p>
             </>
           )}

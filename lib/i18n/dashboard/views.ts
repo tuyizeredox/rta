@@ -99,6 +99,7 @@ export interface ViewsCopy {
     withdrawals: string;
     repaidOf: string;
     progressLabel: string;
+    noChange: string;
   };
   audit: {
     noneTitle: string;
@@ -292,6 +293,7 @@ export const views: Record<Locale, ViewsCopy> = {
       withdrawals: "Withdrawals",
       repaidOf: "of {total} repaid",
       progressLabel: "Loan repayment progress",
+      noChange: "No change",
     },
     audit: {
       noneTitle: "No audit entries",
@@ -489,6 +491,7 @@ export const views: Record<Locale, ViewsCopy> = {
       withdrawals: "Ubwikuze",
       repaidOf: "kuri {total} yishyuwe",
       progressLabel: "Aho ubwishyu bw'inguzanyo bugeze",
+      noChange: "Nta mpinduka",
     },
     audit: {
       noneTitle: "Nta cyanditswe",

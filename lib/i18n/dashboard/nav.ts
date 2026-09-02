@@ -13,6 +13,10 @@ export interface NavCopy {
   applyLoan: string;
   repayments: string;
   account: string;
+  myAccount: string;
+  myDashboard: string;
+  accountStatus: string;
+  qrCode: string;
   statements: string;
   notifications: string;
   profile: string;
@@ -59,6 +63,10 @@ export const nav: Record<Locale, NavCopy> = {
     applyLoan: "Apply for a loan",
     repayments: "Repayments",
     account: "Account",
+    myAccount: "My money",
+    myDashboard: "My overview",
+    accountStatus: "Account status",
+    qrCode: "My QR code",
     statements: "Statements",
     notifications: "Notifications",
     profile: "Profile",
@@ -104,6 +112,10 @@ export const nav: Record<Locale, NavCopy> = {
     applyLoan: "Gusaba inguzanyo",
     repayments: "Kwishyura",
     account: "Konti",
+    myAccount: "Amafaranga yanjye",
+    myDashboard: "Incamake yanjye",
+    accountStatus: "Uko konti ihagaze",
+    qrCode: "Kode yanjye ya QR",
     statements: "Inyandiko za konti",
     notifications: "Ubutumwa",
     profile: "Umwirondoro",

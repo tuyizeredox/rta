@@ -20,15 +20,24 @@ import type { Locale } from "@/types";
 export const LOCALE_COOKIE = "rta-locale";
 export const LOCALE_STORAGE_KEY = "rta-locale";
 
-export const DEFAULT_LOCALE: Locale = "en";
+/**
+ * Kinyarwanda, not English.
+ *
+ * The people this platform is built for are tailors in Rwanda, and Kinyarwanda
+ * is the language they read a balance in. English was the default only because
+ * it was the language the first screens happened to be written in; anyone who
+ * needs English can still switch, and the choice is remembered.
+ */
+export const DEFAULT_LOCALE: Locale = "rw";
 
-export const LOCALES: readonly Locale[] = ["en", "rw"];
+/** Kinyarwanda first: the order the switch is drawn in follows this. */
+export const LOCALES: readonly Locale[] = ["rw", "en"];
 
 /** A year: the choice should outlive the session that made it. */
 export const LOCALE_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 export function isLocale(value: unknown): value is Locale {
-  return value === "en" || value === "rw";
+  return value === "rw" || value === "en";
 }
 
 /** Any untrusted value — cookie, query string, storage — narrowed to a locale. */

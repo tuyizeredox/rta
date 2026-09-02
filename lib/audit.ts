@@ -36,6 +36,14 @@ export const AUDIT_ACTIONS = {
   USER_EMAIL_VERIFIED: "USER_EMAIL_VERIFIED",
   USER_PHONE_VERIFIED: "USER_PHONE_VERIFIED",
   USER_SESSIONS_REVOKED: "USER_SESSIONS_REVOKED",
+  /// Printable sign-in QR codes. Issue and revocation are ordinary account
+  /// events; a scan is recorded separately from USER_LOGGED_IN so that "how
+  /// did this session start" is answerable from the log alone, and a rejected
+  /// scan is recorded because a run of them is what a stolen card looks like.
+  QR_ACCESS_ISSUED: "QR_ACCESS_ISSUED",
+  QR_ACCESS_REVOKED: "QR_ACCESS_REVOKED",
+  QR_ACCESS_SIGNED_IN: "QR_ACCESS_SIGNED_IN",
+  QR_ACCESS_REJECTED: "QR_ACCESS_REJECTED",
 
   // Members
   MEMBER_REGISTERED: "MEMBER_REGISTERED",

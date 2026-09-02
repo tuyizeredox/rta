@@ -1,0 +1,298 @@
+import type { Locale } from "@/types";
+
+/**
+ * The screens every signed-in person shares, whatever their role: the account
+ * status page and the sign-in QR code.
+ *
+ * Kept out of `member.ts` because an administrator has one of these cards too,
+ * and copy that says "your savings" would be wrong on their screen. The
+ * member-specific figures on the status page live behind their own keys.
+ *
+ * The QR wording carries a security warning that has to survive translation
+ * intact. "Umuntu wese ufite iyi foto ashobora kwinjira" is not a softened
+ * version of "anyone holding this image can sign in" — it says the same thing,
+ * because a member who does not understand that will photograph the card into
+ * a WhatsApp group.
+ */
+export interface AccountCopy {
+  status: {
+    title: string;
+    description: string;
+    signedInWithQr: string;
+    accountState: string;
+    membership: string;
+    identityCheck: string;
+    role: string;
+    association: string;
+    memberNumber: string;
+    paymentReference: string;
+    paymentReferenceHint: string;
+    memberSince: string;
+    notRecorded: string;
+    savingsBalance: string;
+    availableToWithdraw: string;
+    outstandingLoan: string;
+    nextRepayment: string;
+    nothingOwed: string;
+    noRepaymentScheduled: string;
+    goodStandingTitle: string;
+    goodStandingBody: string;
+    overdueTitle: string;
+    overdueBody: string;
+    suspendedTitle: string;
+    suspendedBody: string;
+    staffTitle: string;
+    staffBody: string;
+    openSavingsBody: string;
+    openSavingsAction: string;
+    opening: string;
+    openSavingsFailed: string;
+    continueToDashboard: string;
+    myQrCode: string;
+    noSavingsAccount: string;
+  };
+  qr: {
+    title: string;
+    description: string;
+    noCodeTitle: string;
+    noCodeBody: string;
+    generate: string;
+    generating: string;
+    regenerate: string;
+    revoke: string;
+    working: string;
+    regenerateConfirmTitle: string;
+    regenerateConfirmBody: string;
+    regenerateConfirmAction: string;
+    revokeConfirmTitle: string;
+    revokeConfirmBody: string;
+    revokeConfirmAction: string;
+    downloadPng: string;
+    downloadSvg: string;
+    print: string;
+    issuedOn: string;
+    validUntil: string;
+    expiringSoon: string;
+    lastUsed: string;
+    neverUsed: string;
+    timesUsed: string;
+    howToTitle: string;
+    howToStepOne: string;
+    howToStepTwo: string;
+    howToStepThree: string;
+    keepSafeTitle: string;
+    keepSafeBody: string;
+    scanToSignIn: string;
+    cardHolder: string;
+    failedTitle: string;
+    failedBody: string;
+  };
+  qrInvalid: {
+    title: string;
+    body: string;
+    throttledTitle: string;
+    throttledBody: string;
+    whatToDo: string;
+    signIn: string;
+    help: string;
+  };
+}
+
+export const account: Record<Locale, AccountCopy> = {
+  en: {
+    status: {
+      title: "Your account",
+      description: "Where your membership and your money stand today.",
+      signedInWithQr: "Signed in with your QR code.",
+      accountState: "Account",
+      membership: "Membership",
+      identityCheck: "Identity check",
+      role: "Role",
+      association: "Association",
+      memberNumber: "Membership number",
+      paymentReference: "Payment reference",
+      paymentReferenceHint:
+        "Quote this on every payment so it reaches your account the same day.",
+      memberSince: "Member since",
+      notRecorded: "Not recorded",
+      savingsBalance: "Savings balance",
+      availableToWithdraw: "Available to withdraw",
+      outstandingLoan: "Loan outstanding",
+      nextRepayment: "Next repayment",
+      nothingOwed: "Nothing owed",
+      noRepaymentScheduled: "None scheduled",
+      goodStandingTitle: "Your account is in good standing",
+      goodStandingBody:
+        "Your membership is active and there is nothing needing your attention.",
+      overdueTitle: "A repayment is overdue",
+      overdueBody:
+        "Your loan is {days} days past due. Settle it to keep your account in good standing.",
+      suspendedTitle: "Your membership is suspended",
+      suspendedBody:
+        "You can still see your records, but deposits, withdrawals and loan applications are paused. Speak to an administrator.",
+      staffTitle: "Staff account",
+      staffBody:
+        "This account administers the association rather than holding savings of its own.",
+      openSavingsBody:
+        "Staff save with the association too. Open a savings account under this same login and your contributions, loans and statements appear here alongside your administrative work.",
+      openSavingsAction: "Open my savings account",
+      opening: "Opening…",
+      openSavingsFailed:
+        "The account could not be opened. Please try again, or ask another administrator.",
+      continueToDashboard: "Go to my dashboard",
+      myQrCode: "My QR code",
+      noSavingsAccount: "No savings account has been opened yet.",
+    },
+    qr: {
+      title: "My sign-in QR code",
+      description:
+        "Scan this with your phone camera to open your account without typing a password.",
+      noCodeTitle: "You do not have a QR code yet",
+      noCodeBody:
+        "Generate one, then print it or save the image to your phone. Scanning it takes you straight to your account.",
+      generate: "Generate my QR code",
+      generating: "Generating…",
+      regenerate: "Replace with a new code",
+      revoke: "Turn off QR sign-in",
+      working: "Please wait…",
+      regenerateConfirmTitle: "Replace your QR code?",
+      regenerateConfirmBody:
+        "The code you have now will stop working immediately, including any copy you have printed. Do this if your card has been lost or seen by someone else.",
+      regenerateConfirmAction: "Replace it",
+      revokeConfirmTitle: "Turn off QR sign-in?",
+      revokeConfirmBody:
+        "Your code will stop working immediately and you will sign in with your password until you generate a new one.",
+      revokeConfirmAction: "Turn it off",
+      downloadPng: "Download image",
+      downloadSvg: "Download for printing",
+      print: "Print card",
+      issuedOn: "Created {date}",
+      validUntil: "Valid until {date}",
+      expiringSoon: "Expires in {days} days — replace it before then.",
+      lastUsed: "Last used {date}",
+      neverUsed: "Not used yet",
+      timesUsed: "Used {count} time|Used {count} times",
+      howToTitle: "How to use it",
+      howToStepOne: "Open the camera on your phone.",
+      howToStepTwo: "Point it at the code until a link appears.",
+      howToStepThree: "Tap the link — your account opens straight away.",
+      keepSafeTitle: "Keep this code to yourself",
+      keepSafeBody:
+        "Anyone holding this image can open your account. Do not send it in a message or post it in a group. If you lose it, replace it here — the old one stops working at once.",
+      scanToSignIn: "Scan to sign in",
+      cardHolder: "Member",
+      failedTitle: "That did not work",
+      failedBody: "Please try again. If it keeps failing, contact an administrator.",
+    },
+    qrInvalid: {
+      title: "This QR code did not work",
+      body:
+        "It may have expired, or it may have been replaced by a newer one. Your account is fine — you just need to sign in another way.",
+      throttledTitle: "Too many attempts",
+      throttledBody:
+        "Too many codes have been scanned from this connection. Wait a few minutes and try again.",
+      whatToDo: "Sign in with your password, then generate a new code from your account.",
+      signIn: "Sign in with a password",
+      help: "If you did not scan this yourself, tell an administrator.",
+    },
+  },
+
+  rw: {
+    status: {
+      title: "Konti yawe",
+      description: "Uko ubunyamuryango bwawe n'amafaranga yawe bihagaze uyu munsi.",
+      signedInWithQr: "Winjiye ukoresheje kode yawe ya QR.",
+      accountState: "Konti",
+      membership: "Ubunyamuryango",
+      identityCheck: "Igenzura ry'umwirondoro",
+      role: "Uruhare",
+      association: "Ihuriro",
+      memberNumber: "Nimero y'umunyamuryango",
+      paymentReference: "Nimero y'ubwishyu",
+      paymentReferenceHint:
+        "Andika iyi nimero kuri buri bwishyu kugira ngo bugere kuri konti yawe uwo munsi.",
+      memberSince: "Yinjiye",
+      notRecorded: "Ntibyanditswe",
+      savingsBalance: "Ubwizigame bwawe",
+      availableToWithdraw: "Ushobora kubikuza",
+      outstandingLoan: "Inguzanyo isigaye",
+      nextRepayment: "Ubwishyu bukurikira",
+      nothingOwed: "Nta cyo urimo",
+      noRepaymentScheduled: "Nta bwishyu buteganyijwe",
+      goodStandingTitle: "Konti yawe ihagaze neza",
+      goodStandingBody:
+        "Ubunyamuryango bwawe burakora kandi nta kintu gisaba ko ugikoraho.",
+      overdueTitle: "Hari ubwishyu bwatinze",
+      overdueBody:
+        "Inguzanyo yawe yatinze iminsi {days}. Yishyure kugira ngo konti yawe ikomeze kuba nziza.",
+      suspendedTitle: "Ubunyamuryango bwawe bwahagaritswe",
+      suspendedBody:
+        "Uracyabona amakuru yawe, ariko kubitsa, kubikuza no gusaba inguzanyo byahagaritswe. Vugana n'umuyobozi.",
+      staffTitle: "Konti y'umukozi",
+      staffBody:
+        "Iyi konti iyobora ihuriro; nta bwizigame bwayo bwite ifite.",
+      openSavingsBody:
+        "Abakozi na bo bazigama mu ihuriro. Fungura konti y'ubwizigame kuri iyi konti imwe, maze ubwizigame bwawe, inguzanyo n'ibyemezo bigaragare hano hamwe n'akazi kawe ko kuyobora.",
+      openSavingsAction: "Fungura konti yanjye y'ubwizigame",
+      opening: "Irafungurwa…",
+      openSavingsFailed:
+        "Konti ntiyashoboye gufungurwa. Ongera ugerageze, cyangwa usabe undi muyobozi.",
+      continueToDashboard: "Jya ku mbonerahamwe yanjye",
+      myQrCode: "Kode yanjye ya QR",
+      noSavingsAccount: "Nta konti y'ubwizigame irafungurwa.",
+    },
+    qr: {
+      title: "Kode yanjye ya QR yo kwinjira",
+      description:
+        "Fata iyi kode na kamera ya telefone yawe winjire kuri konti utandika ijambobanga.",
+      noCodeTitle: "Nta kode ya QR ufite",
+      noCodeBody:
+        "Kora imwe, hanyuma uyicape cyangwa ubike ifoto kuri telefone yawe. Kuyifata bikujyana kuri konti yawe ako kanya.",
+      generate: "Kora kode yanjye ya QR",
+      generating: "Irakorwa…",
+      regenerate: "Simbuza indi nshya",
+      revoke: "Hagarika kwinjira na QR",
+      working: "Tegereza gato…",
+      regenerateConfirmTitle: "Gusimbuza kode yawe ya QR?",
+      regenerateConfirmBody:
+        "Kode ufite ubu izahita ireka gukora, harimo n'iyo wacapye. Bikore niba ikarita yawe yazimiye cyangwa yabonywe n'undi muntu.",
+      regenerateConfirmAction: "Yisimbuze",
+      revokeConfirmTitle: "Guhagarika kwinjira na QR?",
+      revokeConfirmBody:
+        "Kode yawe izahita ireka gukora kandi uzajya winjira ukoresheje ijambobanga kugeza ukoze indi nshya.",
+      revokeConfirmAction: "Bihagarike",
+      downloadPng: "Kuramo ifoto",
+      downloadSvg: "Kuramo iyo gucapa",
+      print: "Capa ikarita",
+      issuedOn: "Yakozwe {date}",
+      validUntil: "Ikora kugeza {date}",
+      expiringSoon: "Irangira mu minsi {days} — yisimbuze mbere y'aho.",
+      lastUsed: "Yakoreshejwe bwa nyuma {date}",
+      neverUsed: "Ntiraboneka gukoreshwa",
+      timesUsed: "Yakoreshejwe inshuro {count}|Yakoreshejwe inshuro {count}",
+      howToTitle: "Uko uyikoresha",
+      howToStepOne: "Fungura kamera ya telefone yawe.",
+      howToStepTwo: "Yerekeze kuri kode kugeza umurongo ugaragaye.",
+      howToStepThree: "Kanda uwo murongo — konti yawe ihita ifunguka.",
+      keepSafeTitle: "Iyi kode ni iyawe wenyine",
+      keepSafeBody:
+        "Umuntu wese ufite iyi foto ashobora gufungura konti yawe. Ntuyoherereze mu butumwa cyangwa mu itsinda. Nizimira, yisimbuze hano — iya kera ihita ireka gukora.",
+      scanToSignIn: "Fata kode winjire",
+      cardHolder: "Umunyamuryango",
+      failedTitle: "Ntibyagenze neza",
+      failedBody: "Ongera ugerageze. Nibikomeza kunanirana, vugana n'umuyobozi.",
+    },
+    qrInvalid: {
+      title: "Iyi kode ya QR ntiyakoze",
+      body:
+        "Ashobora kuba yararangiye igihe, cyangwa yarasimbuwe n'indi nshya. Konti yawe ni nzima — usabwa gusa kwinjira ukoresheje ubundi buryo.",
+      throttledTitle: "Wagerageje kenshi cyane",
+      throttledBody:
+        "Hafashwe kode nyinshi cyane muri uyu murongo. Tegereza iminota mike hanyuma wongere ugerageze.",
+      whatToDo:
+        "Injira ukoresheje ijambobanga, hanyuma ukore kode nshya uhereye kuri konti yawe.",
+      signIn: "Injira ukoresheje ijambobanga",
+      help: "Niba atari wowe wafashe iyi kode, bwira umuyobozi.",
+    },
+  },
+};

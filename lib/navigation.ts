@@ -17,9 +17,11 @@ import {
   LayoutDashboard,
   Link2,
   PiggyBank,
+  QrCode,
   ScrollText,
   Settings,
   ShieldCheck,
+  ShieldQuestion,
   Users,
   Wallet,
 } from "lucide-react";
@@ -49,6 +51,11 @@ export interface NavItem {
   badgeKey?: "pendingLoans" | "pendingWithdrawals" | "unmatchedPayments" | "pendingMembers";
   /// Match child routes too (default true). False for index links.
   exact?: boolean;
+  /// Hide unless the user has a member record of their own. Distinct from
+  /// `permission`: an administrator holds every savings permission there is
+  /// and still has nothing to show here unless they save with the association
+  /// themselves.
+  requiresMemberAccount?: boolean;
 }
 
 export interface NavSection {
@@ -82,12 +89,60 @@ const MEMBER_NAV: NavSection[] = [
   {
     titleKey: "account",
     items: [
+      { labelKey: "accountStatus", href: "/account/status", icon: ShieldQuestion },
+      { labelKey: "qrCode", href: "/account/qr", icon: QrCode },
       { labelKey: "statements", href: "/dashboard/statements", icon: FileText },
       { labelKey: "notifications", href: "/dashboard/notifications", icon: Bell },
       { labelKey: "profile", href: "/dashboard/profile", icon: Settings },
     ],
   },
 ];
+
+/**
+ * The staff member's own money.
+ *
+ * Administrators in a savings association are usually members of it: they
+ * contribute monthly and borrow like everyone else. These links point at the
+ * same personal pages a member uses — the guard behind them scopes every query
+ * to the caller's own record — so nothing here grants sight of anyone else's
+ * account.
+ *
+ * The status and QR links have no `requiresMemberAccount` flag because they
+ * are meaningful for a pure staff account too: one shows who they are and
+ * whether their access is in order, the other is how they sign in.
+ */
+const PERSONAL_SECTION: NavSection = {
+  titleKey: "myAccount",
+  items: [
+    { labelKey: "accountStatus", href: "/account/status", icon: ShieldQuestion },
+    {
+      labelKey: "myDashboard",
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      exact: true,
+      requiresMemberAccount: true,
+    },
+    {
+      labelKey: "mySavings",
+      href: "/dashboard/savings",
+      icon: PiggyBank,
+      requiresMemberAccount: true,
+    },
+    {
+      labelKey: "myLoans",
+      href: "/dashboard/loans",
+      icon: HandCoins,
+      requiresMemberAccount: true,
+    },
+    {
+      labelKey: "statements",
+      href: "/dashboard/statements",
+      icon: FileText,
+      requiresMemberAccount: true,
+    },
+    { labelKey: "qrCode", href: "/account/qr", icon: QrCode },
+  ],
+};
 
 const ADMIN_NAV: NavSection[] = [
   {
@@ -216,6 +271,7 @@ const ADMIN_NAV: NavSection[] = [
       },
     ],
   },
+  PERSONAL_SECTION,
 ];
 
 const SUPER_ADMIN_NAV: NavSection[] = [
@@ -250,6 +306,7 @@ const SUPER_ADMIN_NAV: NavSection[] = [
       { labelKey: "settings", href: "/super-admin/settings", icon: Settings },
     ],
   },
+  PERSONAL_SECTION,
 ];
 
 export function navigationFor(role: UserRole): NavSection[] {
@@ -263,18 +320,33 @@ export function navigationFor(role: UserRole): NavSection[] {
   }
 }
 
-/** Filters a navigation tree down to what the user may see. */
+/**
+ * Filters a navigation tree down to what the user may see.
+ *
+ * Two independent filters, because they answer different questions. A
+ * permission decides what someone is allowed to do to the association's
+ * records; `hasMemberAccount` decides whether they have records of their own to
+ * look at. An administrator passes the first for every savings link in the
+ * tree and still has no personal balance to show.
+ *
+ * A section that empties out is dropped, so a staff account with no membership
+ * does not get a "My money" heading with nothing under it.
+ */
 export function visibleNavigation(
   role: UserRole,
-  permissions: Set<string> | string[]
+  permissions: Set<string> | string[],
+  options: { hasMemberAccount?: boolean } = {}
 ): NavSection[] {
   const held = permissions instanceof Set ? permissions : new Set(permissions);
+  const hasMemberAccount = options.hasMemberAccount ?? role === "MEMBER";
 
   return navigationFor(role)
     .map((section) => ({
       ...section,
       items: section.items.filter(
-        (item) => !item.permission || held.has(item.permission)
+        (item) =>
+          (!item.permission || held.has(item.permission)) &&
+          (!item.requiresMemberAccount || hasMemberAccount)
       ),
     }))
     .filter((section) => section.items.length > 0);
@@ -318,4 +390,8 @@ export const BREADCRUMB_LABELS: Record<string, string> = {
   jobs: "Background jobs",
   apply: "New application",
   deposit: "Make a deposit",
+  account: "Account",
+  status: "Account status",
+  qr: "Sign-in QR code",
+  password: "Security & password",
 };

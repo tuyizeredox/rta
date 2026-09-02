@@ -12,8 +12,10 @@ export interface ShellCopy {
   breadcrumb: string;
   changeLanguage: string;
   language: string;
-  myAccount: string;
-  changePassword: string;
+  myProfile: string;
+  accountStatus: string;
+  myQrCode: string;
+  securityPassword: string;
   member: string;
   admin: string;
   superAdmin: string;
@@ -31,8 +33,10 @@ export const shell: Record<Locale, ShellCopy> = {
     breadcrumb: "Breadcrumb",
     changeLanguage: "Change language",
     language: "Language",
-    myAccount: "My account",
-    changePassword: "Change password",
+    myProfile: "My profile",
+    accountStatus: "Account status",
+    myQrCode: "My sign-in QR code",
+    securityPassword: "Security & password",
     member: "Member",
     admin: "Administrator",
     superAdmin: "Super administrator",
@@ -49,8 +53,10 @@ export const shell: Record<Locale, ShellCopy> = {
     breadcrumb: "Inzira",
     changeLanguage: "Hindura ururimi",
     language: "Ururimi",
-    myAccount: "Konti yanjye",
-    changePassword: "Hindura ijambobanga",
+    myProfile: "Umwirondoro wanjye",
+    accountStatus: "Uko konti ihagaze",
+    myQrCode: "Kode yanjye ya QR",
+    securityPassword: "Umutekano n'ijambobanga",
     member: "Umunyamuryango",
     admin: "Umuyobozi",
     superAdmin: "Umuyobozi mukuru",

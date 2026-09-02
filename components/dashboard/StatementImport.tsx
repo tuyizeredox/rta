@@ -17,6 +17,9 @@ import { Alert } from "@/components/ui/alert";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { formatMoney } from "@/lib/money";
+import { useLanguage } from "@/components/LanguageProvider";
+import { fill, pluralize } from "@/lib/i18n/fill";
+import { formatDate } from "@/lib/i18n/dates";
 import {
   TableWrapper,
   Table,
@@ -104,6 +107,8 @@ interface Preview {
 
 export function StatementImport({ canImport }: { canImport: boolean }) {
   const router = useRouter();
+  const { d, locale } = useLanguage();
+  const copy = d.admin.import;
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [uploading, setUploading] = useState(false);
@@ -130,7 +135,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
       const payload = await response.json();
 
       if (!response.ok) {
-        setError(payload?.error?.message ?? "Could not read this statement");
+        setError(payload?.error?.message ?? copy.readFailed);
         setUploading(false);
         return;
       }
@@ -154,7 +159,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
         )
       );
     } catch {
-      setError("Could not upload the file. Check your connection and try again.");
+      setError(copy.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -189,7 +194,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
     const payload = await response.json();
 
     if (!response.ok) {
-      throw new Error(payload?.error?.message ?? "The import failed");
+      throw new Error(payload?.error?.message ?? copy.importFailed);
     }
 
     setResult({ message: payload.message, credited: payload.credited });
@@ -197,6 +202,13 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
     setSelected(new Set());
     router.refresh();
   }
+
+  const confidenceLabel = (value: PreviewRow["confidence"]) =>
+    value === "high"
+      ? copy.confidenceHigh
+      : value === "medium"
+        ? copy.confidenceMedium
+        : copy.confidenceLow;
 
   const importable = preview?.rows.filter(
     (row) => row.direction === "CREDIT" && !row.alreadyImported
@@ -212,12 +224,12 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
   if (result) {
     return (
       <div className="space-y-4">
-        <Alert variant="success" title="Import complete">
+        <Alert variant="success" title={copy.completeTitle}>
           {result.message}
         </Alert>
         <Button onClick={() => setResult(null)}>
           <Upload className="size-4" aria-hidden="true" />
-          Import another statement
+          {copy.importAnother}
         </Button>
       </div>
     );
@@ -252,11 +264,10 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
           </span>
 
           <span className="mt-5 font-heading text-lg font-semibold text-ink">
-            {uploading ? "Reading the statement…" : "Upload a bank statement PDF"}
+            {uploading ? copy.reading : copy.dropPrompt}
           </span>
           <span className="mt-1.5 max-w-sm text-sm text-ink-muted">
-            Drag the file here, or click to choose it. Nothing is written until
-            you review and confirm.
+            {copy.dropHint}
           </span>
 
           <input
@@ -282,44 +293,37 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
       {error && <Alert variant="error">{error}</Alert>}
 
       {preview.accountMismatch && (
-        <Alert variant="error" title="This may be the wrong account">
-          The statement appears to be for account{" "}
-          <strong>{preview.detectedAccount}</strong>, but this association&rsquo;s
-          collection account is <strong>{preview.expectedAccount}</strong>. Check
-          you have uploaded the right file before importing.
+        <Alert variant="error" title={copy.wrongAccountTitle}>
+          {fill(copy.wrongAccountBody, {
+            detected: preview.detectedAccount ?? "—",
+            expected: preview.expectedAccount ?? "—",
+          })}
         </Alert>
       )}
 
       {preview.summary.lowConfidence > 0 && (
-        <Alert variant="warning" title="Some rows could not be read confidently">
-          {preview.summary.lowConfidence} row(s) are marked low confidence and are
-          not ticked. Check them against the PDF before including them.
+        <Alert variant="warning" title={copy.lowConfidenceTitle}>
+          {pluralize(copy.lowConfidenceBody, preview.summary.lowConfidence)}
         </Alert>
       )}
 
       {preview.extractionMode === "layout" && (
-        <Alert variant="warning" title="Read with the fallback parser">
-          The high-accuracy extractor was unavailable, so this statement was
-          read with the JavaScript parser. On statements whose columns sit
-          tightly together it can merge two columns into one wrong amount.
-          Check each amount against the PDF, and install the Python extractor
-          (<code>pip install -r scripts/requirements.txt</code>) to avoid this.
+        <Alert variant="warning" title={copy.fallbackParserTitle}>
+          {copy.fallbackParserBody}
         </Alert>
       )}
 
       {preview.extractionMode === "flat" && (
-        <Alert variant="error" title="This PDF had no usable column layout">
-          The text was read with no table structure at all, so amounts and
-          dates are very likely to have been misread. Check every single row
-          against the document before importing anything.
+        <Alert variant="error" title={copy.noLayoutTitle}>
+          {copy.noLayoutBody}
         </Alert>
       )}
 
       {preview.pagesWithoutText.length > 0 && (
-        <Alert variant="warning" title="Some pages contained no text">
-          Page(s) {preview.pagesWithoutText.join(", ")} yielded nothing — they
-          are probably scanned images. Any transactions printed on them are
-          missing from the table below.
+        <Alert variant="warning" title={copy.noTextPagesTitle}>
+          {pluralize(copy.noTextPagesBody, preview.pagesWithoutText.length, {
+            pages: preview.pagesWithoutText.join(", "),
+          })}
         </Alert>
       )}
 
@@ -331,27 +335,40 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
               {preview.fileName}
             </p>
             <p className="mt-0.5 text-sm text-ink-muted">
-              {preview.pageCount} page(s) · {preview.summary.total} rows read
-              {preview.detectedAccount && ` · account ${preview.detectedAccount}`}
+              {pluralize(copy.fileSummary, preview.pageCount, {
+                pages: preview.pageCount,
+              })}{" "}
+              · {pluralize(copy.rowsRead, preview.summary.total)}
+              {preview.detectedAccount &&
+                fill(copy.fileAccount, { account: preview.detectedAccount })}
               {preview.detectedPeriod.from &&
-                ` · ${preview.detectedPeriod.from} to ${preview.detectedPeriod.to}`}
+                fill(copy.filePeriod, {
+                  from: preview.detectedPeriod.from,
+                  to: preview.detectedPeriod.to ?? "—",
+                })}
             </p>
 
             {/* Where every line of the document ended up. Shown so the admin
                 can confirm nothing was silently dropped between the PDF and
                 the table below — the counts add up to linesRead. */}
             <p className="mt-2 text-xs text-ink-muted">
-              Read {preview.coverage.linesRead} line(s) from the PDF:{" "}
+              {fill(copy.coverageLead, { count: preview.coverage.linesRead })}{" "}
               <strong className="text-ink">
-                {preview.coverage.transactionLines} transaction(s)
+                {fill(copy.coverageTransactions, {
+                  count: preview.coverage.transactionLines,
+                })}
               </strong>
-              , {preview.coverage.structuralLines} header/footer,{" "}
-              {preview.coverage.otherLines} other
+              {fill(copy.coverageRest, {
+                structural: preview.coverage.structuralLines,
+                other: preview.coverage.otherLines,
+              })}
               {preview.coverage.unparsedCount > 0 && (
                 <>
                   ,{" "}
                   <strong className="text-amber-700">
-                    {preview.coverage.unparsedCount} unreadable
+                    {fill(copy.coverageUnreadable, {
+                      count: preview.coverage.unparsedCount,
+                    })}
                   </strong>
                 </>
               )}
@@ -368,24 +385,27 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
             }}
           >
             <X className="size-3.5" aria-hidden="true" />
-            Cancel
+            {d.common.cancel}
           </Button>
         </div>
 
         <dl className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Figure label="Credits found" value={String(preview.summary.credits)} />
           <Figure
-            label="Would match a member"
+            label={copy.figCredits}
+            value={String(preview.summary.credits)}
+          />
+          <Figure
+            label={copy.figWouldMatch}
             value={String(preview.summary.wouldCredit)}
             tone="good"
           />
           <Figure
-            label="Would go to unmatched"
+            label={copy.figWouldUnmatch}
             value={String(preview.summary.wouldGoToUnmatched)}
             tone={preview.summary.wouldGoToUnmatched > 0 ? "warn" : undefined}
           />
           <Figure
-            label="Already imported"
+            label={copy.figAlreadyImported}
             value={String(preview.summary.alreadyImported)}
           />
         </dl>
@@ -395,7 +415,10 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
       <TableWrapper>
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-3">
           <p className="text-sm text-ink-muted">
-            <strong className="text-ink">{selected.size}</strong> row(s) selected ·{" "}
+            <strong className="text-ink">
+              {pluralize(copy.rowsSelected, selected.size)}
+            </strong>{" "}
+            ·{" "}
             <strong className="text-ink">
               {formatMoney(String(selectedTotal.toFixed(2)))}
             </strong>
@@ -409,7 +432,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
               }
               className="text-xs font-semibold text-primary hover:underline"
             >
-              Select all importable
+              {copy.selectAllImportable}
             </button>
             <span className="text-ink-muted">·</span>
             <button
@@ -417,7 +440,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
               onClick={() => setSelected(new Set())}
               className="text-xs font-semibold text-ink-muted hover:underline"
             >
-              Clear
+              {d.common.clear}
             </button>
           </div>
         </div>
@@ -426,11 +449,11 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-10"> </TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Description read from the PDF</TableHead>
-              <TableHead align="right">Amount</TableHead>
-              <TableHead>Would credit</TableHead>
-              <TableHead>Parser</TableHead>
+              <TableHead>{d.common.date}</TableHead>
+              <TableHead>{copy.colDescription}</TableHead>
+              <TableHead align="right">{d.common.amount}</TableHead>
+              <TableHead>{copy.colWouldCredit}</TableHead>
+              <TableHead>{copy.colParser}</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -455,7 +478,9 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
                       type="checkbox"
                       checked={isSelected}
                       disabled={!selectable || !canImport}
-                      aria-label={`Include ${row.description}`}
+                      aria-label={fill(copy.includeRow, {
+                        description: row.description,
+                      })}
                       onChange={(e) => {
                         const next = new Set(selected);
                         if (e.target.checked) next.add(row.fingerprint);
@@ -467,11 +492,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
                   </TableCell>
 
                   <TableCell className="whitespace-nowrap text-sm text-ink-muted">
-                    {new Date(row.date).toLocaleDateString("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                    })}
+                    {formatDate(row.date, locale)}
                   </TableCell>
 
                   <TableCell className="max-w-md">
@@ -526,11 +547,11 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
                   <TableCell className="max-w-xs">
                     {row.alreadyImported ? (
                       <span className="text-xs font-medium text-ink-muted">
-                        Already imported
+                        {copy.alreadyImported}
                       </span>
                     ) : row.direction === "DEBIT" ? (
                       <span className="text-xs text-ink-muted">
-                        Debit — not a contribution
+                        {copy.debitNotContribution}
                       </span>
                     ) : row.matchedMemberName ? (
                       <>
@@ -543,7 +564,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
                       </>
                     ) : (
                       <span className="text-xs text-amber-700">
-                        No member matched — will wait in the unmatched queue
+                        {copy.noMemberMatched}
                       </span>
                     )}
                   </TableCell>
@@ -558,7 +579,7 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
                             ? "warning"
                             : "danger"
                       }
-                      label={row.confidence}
+                      label={confidenceLabel(row.confidence)}
                       size="sm"
                     />
                   </TableCell>
@@ -572,13 +593,9 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
       {preview.unparsedLines.length > 0 && (
         <details className="rounded-2xl border border-border bg-surface p-5">
           <summary className="cursor-pointer text-sm font-semibold text-ink">
-            {preview.unparsedLines.length} line(s) could not be interpreted
+            {pluralize(copy.unparsedSummary, preview.unparsedLines.length)}
           </summary>
-          <p className="mt-2 text-xs text-ink-muted">
-            These lines looked like they might be transactions but could not be
-            read. Check the PDF — if any are real payments, credit them manually
-            from the unmatched queue.
-          </p>
+          <p className="mt-2 text-xs text-ink-muted">{copy.unparsedNote}</p>
           <ul className="mt-3 space-y-1">
             {preview.unparsedLines.map((line, index) => (
               <li key={index} className="font-mono text-[11px] text-ink-muted">
@@ -599,26 +616,24 @@ export function StatementImport({ canImport }: { canImport: boolean }) {
           }}
         >
           <CheckCircle2 className="size-4" aria-hidden="true" />
-          Import {selected.size} payment{selected.size === 1 ? "" : "s"}
+          {pluralize(copy.importButton, selected.size)}
         </Button>
       </div>
 
       <ConfirmDialog
         open={confirming}
         onOpenChange={setConfirming}
-        title={`Import ${selected.size} payment${selected.size === 1 ? "" : "s"}?`}
-        description={`${formatMoney(String(selectedTotal.toFixed(2)))} will be credited to members' savings accounts, and each member will receive an SMS confirming their new balance. This posts to the ledger and can only be undone by a reversal.`}
-        confirmLabel="Import and credit members"
+        title={pluralize(copy.confirmTitle, selected.size)}
+        description={fill(copy.confirmBody, {
+          amount: formatMoney(String(selectedTotal.toFixed(2))),
+        })}
+        confirmLabel={copy.confirmLabel}
         requireReason
-        reasonLabel="Confirm this is your association's genuine bank statement"
-        reasonPlaceholder="e.g. Equity Bank statement for August 2026, downloaded from internet banking on 14 Aug"
+        reasonLabel={copy.confirmReasonLabel}
+        reasonPlaceholder={copy.confirmReasonPlaceholder}
         onConfirm={commit}
       >
-        <Alert variant="warning">
-          You are attesting that this PDF is a genuine statement for this
-          association&rsquo;s account and that you have checked the rows you
-          selected. Your name is recorded against every payment this creates.
-        </Alert>
+        <Alert variant="warning">{copy.attestation}</Alert>
       </ConfirmDialog>
     </div>
   );

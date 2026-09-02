@@ -9,10 +9,18 @@ import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { ROLE_HOME } from "@/lib/auth/permissions";
 
-export const metadata: Metadata = {
-  title: "Membership pending | RTA Savings & Loans",
-  robots: { index: false, follow: false },
-};
+/**
+ * The browser tab follows the reader's language like the rest of the page.
+ * A function rather than a constant because the title comes from the
+ * request's locale cookie, which a module-level value cannot see.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const { d } = await getDashboardCopy();
+  return {
+    title: `${d.auth.pendingApproval.title} | RTA Savings & Loans`,
+    robots: { index: false, follow: false },
+  };
+}
 
 export const dynamic = "force-dynamic";
 

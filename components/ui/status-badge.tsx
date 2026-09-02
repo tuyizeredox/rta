@@ -1,3 +1,7 @@
+"use client";
+
+import { useLanguage } from "@/components/LanguageProvider";
+import { statusLabel } from "@/lib/i18n/dashboard/status";
 import { cn } from "@/lib/utils";
 
 /**
@@ -9,6 +13,12 @@ import { cn } from "@/lib/utils";
  *
  * Colour is never the only signal: the label is always spelled out, which is
  * what carries the meaning for colour-blind users and in printed statements.
+ *
+ * A client component purely so it can reach the reader's language: the words
+ * live in lib/i18n/dashboard/status.ts, and rendering an untranslated
+ * "OVERDUE" beside an otherwise Kinyarwanda page is exactly the sentence a
+ * member most needs to understand. It takes only serialisable props, so the
+ * server components that render it in tables are unaffected.
  */
 
 export type StatusTone =
@@ -29,105 +39,100 @@ const TONE_CLASSES: Record<StatusTone, string> = {
 };
 
 /**
- * Every status value the system can display, mapped to a tone and a
- * human-readable label. Unknown values fall back to neutral with the raw
- * value shown, so a new enum member degrades visibly rather than silently.
+ * Every status value the system can display, mapped to a tone. The words that
+ * go with them are in the dictionary, keyed by the same enum value; a status
+ * with a tone but no translation falls back to the humanised enum, so a new
+ * database value degrades visibly rather than silently.
  */
-const STATUS_MAP: Record<string, { tone: StatusTone; label: string }> = {
+const STATUS_TONES: Record<string, StatusTone> = {
   // Generic lifecycle
-  ACTIVE: { tone: "success", label: "Active" },
-  INACTIVE: { tone: "neutral", label: "Inactive" },
-  PENDING: { tone: "pending", label: "Pending" },
-  PENDING_APPROVAL: { tone: "pending", label: "Pending approval" },
-  PENDING_VERIFICATION: { tone: "pending", label: "Pending verification" },
-  SUSPENDED: { tone: "danger", label: "Suspended" },
-  DISABLED: { tone: "danger", label: "Disabled" },
-  LOCKED: { tone: "danger", label: "Locked" },
-  EXITED: { tone: "neutral", label: "Exited" },
-  REJECTED: { tone: "danger", label: "Rejected" },
-  CANCELLED: { tone: "neutral", label: "Cancelled" },
-  ARCHIVED: { tone: "neutral", label: "Archived" },
+  ACTIVE: "success",
+  INACTIVE: "neutral",
+  PENDING: "pending",
+  PENDING_APPROVAL: "pending",
+  PENDING_VERIFICATION: "pending",
+  SUSPENDED: "danger",
+  DISABLED: "danger",
+  LOCKED: "danger",
+  EXITED: "neutral",
+  REJECTED: "danger",
+  CANCELLED: "neutral",
+  ARCHIVED: "neutral",
 
   // KYC
-  UNVERIFIED: { tone: "warning", label: "Unverified" },
-  VERIFIED: { tone: "success", label: "Verified" },
+  UNVERIFIED: "warning",
+  VERIFIED: "success",
 
   // Transactions
-  COMPLETED: { tone: "success", label: "Completed" },
-  FAILED: { tone: "danger", label: "Failed" },
-  REVERSED: { tone: "warning", label: "Reversed" },
+  COMPLETED: "success",
+  FAILED: "danger",
+  REVERSED: "warning",
 
   // Transaction types
-  DEPOSIT: { tone: "success", label: "Deposit" },
-  WITHDRAWAL: { tone: "warning", label: "Withdrawal" },
-  LOAN_DISBURSEMENT: { tone: "info", label: "Loan disbursement" },
-  LOAN_REPAYMENT: { tone: "info", label: "Loan repayment" },
-  PENALTY: { tone: "danger", label: "Penalty" },
-  INTEREST: { tone: "success", label: "Interest" },
-  FEE: { tone: "warning", label: "Fee" },
-  ADJUSTMENT: { tone: "warning", label: "Adjustment" },
-  REVERSAL: { tone: "warning", label: "Reversal" },
-  OTHER: { tone: "neutral", label: "Other" },
+  DEPOSIT: "success",
+  WITHDRAWAL: "warning",
+  LOAN_DISBURSEMENT: "info",
+  LOAN_REPAYMENT: "info",
+  PENALTY: "danger",
+  INTEREST: "success",
+  FEE: "warning",
+  ADJUSTMENT: "warning",
+  REVERSAL: "warning",
+  OTHER: "neutral",
 
   // Payments
-  RECEIVED: { tone: "info", label: "Received" },
-  UNMATCHED: { tone: "warning", label: "Unmatched" },
-  MATCHED: { tone: "info", label: "Matched" },
-  PROCESSED: { tone: "success", label: "Processed" },
-  DUPLICATE: { tone: "neutral", label: "Duplicate" },
+  RECEIVED: "info",
+  UNMATCHED: "warning",
+  MATCHED: "info",
+  PROCESSED: "success",
+  DUPLICATE: "neutral",
+
+  // Payment channels
+  MOBILE_MONEY: "info",
+  BANK_TRANSFER: "info",
+  CASH: "neutral",
+  CHEQUE: "neutral",
+  INTERNAL: "neutral",
 
   // Withdrawals
-  UNDER_REVIEW: { tone: "info", label: "Under review" },
-  APPROVED: { tone: "success", label: "Approved" },
-  PROCESSING: { tone: "info", label: "Processing" },
+  UNDER_REVIEW: "info",
+  APPROVED: "success",
+  PROCESSING: "info",
 
   // Loan applications
-  DRAFT: { tone: "neutral", label: "Draft" },
-  SUBMITTED: { tone: "info", label: "Submitted" },
-  MORE_INFORMATION_REQUIRED: { tone: "warning", label: "More info needed" },
+  DRAFT: "neutral",
+  SUBMITTED: "info",
+  MORE_INFORMATION_REQUIRED: "warning",
 
   // Loans
-  PENDING_DISBURSEMENT: { tone: "pending", label: "Awaiting disbursement" },
-  DISBURSED: { tone: "info", label: "Disbursed" },
-  OVERDUE: { tone: "danger", label: "Overdue" },
-  DEFAULTED: { tone: "danger", label: "Defaulted" },
-  WRITTEN_OFF: { tone: "neutral", label: "Written off" },
-  RESTRUCTURED: { tone: "info", label: "Restructured" },
+  PENDING_DISBURSEMENT: "pending",
+  DISBURSED: "info",
+  OVERDUE: "danger",
+  DEFAULTED: "danger",
+  WRITTEN_OFF: "neutral",
+  RESTRUCTURED: "info",
 
   // Instalments
-  UPCOMING: { tone: "neutral", label: "Upcoming" },
-  DUE: { tone: "warning", label: "Due" },
-  PARTIALLY_PAID: { tone: "info", label: "Partially paid" },
-  PAID: { tone: "success", label: "Paid" },
-  WAIVED: { tone: "neutral", label: "Waived" },
+  UPCOMING: "neutral",
+  DUE: "warning",
+  PARTIALLY_PAID: "info",
+  PAID: "success",
+  WAIVED: "neutral",
 
   // Jobs
-  RUNNING: { tone: "info", label: "Running" },
-  SUCCESS: { tone: "success", label: "Success" },
-  PARTIAL: { tone: "warning", label: "Partial" },
-  SKIPPED: { tone: "neutral", label: "Skipped" },
+  RUNNING: "info",
+  SUCCESS: "success",
+  PARTIAL: "warning",
+  SKIPPED: "neutral",
 
   // Roles
-  MEMBER: { tone: "neutral", label: "Member" },
-  ADMIN: { tone: "info", label: "Admin" },
-  SUPER_ADMIN: { tone: "warning", label: "Super admin" },
+  MEMBER: "neutral",
+  ADMIN: "info",
+  SUPER_ADMIN: "warning",
 };
 
-/** Formats an unmapped enum value into something readable. */
-function humanise(value: string): string {
-  return value
-    .toLowerCase()
-    .split("_")
-    .map((word, i) => (i === 0 ? word.charAt(0).toUpperCase() + word.slice(1) : word))
-    .join(" ");
-}
-
 export function statusTone(status: string): StatusTone {
-  return STATUS_MAP[status]?.tone ?? "neutral";
-}
-
-export function statusLabel(status: string): string {
-  return STATUS_MAP[status]?.label ?? humanise(status);
+  return STATUS_TONES[status] ?? "neutral";
 }
 
 export function StatusBadge({
@@ -144,8 +149,9 @@ export function StatusBadge({
   size?: "default" | "sm";
   className?: string;
 }) {
+  const { d } = useLanguage();
   const resolvedTone = tone ?? statusTone(status);
-  const resolvedLabel = label ?? statusLabel(status);
+  const resolvedLabel = label ?? statusLabel(status, d.status);
 
   return (
     <span

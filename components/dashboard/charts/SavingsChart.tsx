@@ -208,7 +208,13 @@ export function RepaymentProgress({
   );
 }
 
-/** Generic monthly bar chart used by the admin dashboards. */
+/**
+ * Generic monthly bar chart used by the admin dashboards.
+ *
+ * `label` is a "YYYY-MM" key rather than a month name, so the axis can be
+ * drawn in the reader's language. Anything that does not parse as a month is
+ * passed through unchanged.
+ */
 export function MonthlyBarChart({
   data,
   series,
@@ -220,7 +226,11 @@ export function MonthlyBarChart({
   colour?: string;
   highlightNegative?: boolean;
 }) {
-  const plotted = data.map((d) => ({ label: d.label, [series]: toPlot(d.value) }));
+  const { locale } = useLanguage();
+  const plotted = data.map((d) => ({
+    label: formatMonthLabel(d.label, locale),
+    [series]: toPlot(d.value),
+  }));
 
   return (
     <ResponsiveContainer width="100%" height={240}>

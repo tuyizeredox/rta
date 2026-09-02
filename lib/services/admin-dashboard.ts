@@ -306,17 +306,20 @@ export async function getAdminDashboard(
       pendingLoanApplications: pendingApplications,
       pendingMemberApprovals: byStatus.PENDING_APPROVAL ?? 0,
     },
+    // Chart labels are the raw "YYYY-MM" keys, not month names. Naming the
+    // month here would name it in one language for every reader; the chart
+    // component knows the locale and translates the key at render time.
     charts: {
       monthlyDeposits: monthlyMovement.map((row) => ({
-        label: monthLabel(row.month),
+        label: row.month,
         value: toMoneyString(row.deposits),
       })),
       monthlyWithdrawals: monthlyMovement.map((row) => ({
-        label: monthLabel(row.month),
+        label: row.month,
         value: toMoneyString(row.withdrawals),
       })),
       memberGrowth: memberGrowth.map((row) => ({
-        label: monthLabel(row.month),
+        label: row.month,
         value: row.joined,
       })),
     },
@@ -332,13 +335,6 @@ export async function getAdminDashboard(
       createdAt: t.createdAt,
     })),
   };
-}
-
-function monthLabel(month: string): string {
-  const [year, m] = month.split("-");
-  return new Date(Number(year), Number(m) - 1, 1).toLocaleDateString("en-GB", {
-    month: "short",
-  });
 }
 
 /** Unmatched payment queue, with the candidates the matcher considered. */

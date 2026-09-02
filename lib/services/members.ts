@@ -375,6 +375,134 @@ export async function createMember(params: {
 }
 
 /**
+ * Opens a member account for a user who already exists — in practice, a member
+ * of staff.
+ *
+ * WHY THIS IS SEPARATE FROM `createMember`. That function's unit of work is a
+ * User with a Member nested inside it: it always makes a new login, complete
+ * with a temporary password. An administrator already has a login, and giving
+ * them a second one would split their identity in two — two sign-ins, two
+ * password histories, two sets of sessions, and an audit trail that cannot say
+ * whether the person who approved a loan is the person who took one.
+ *
+ * The association is taken from the user's own record and never from a
+ * parameter, so this cannot enrol somebody into a tenant they do not belong
+ * to. Everything else — the sequence claim, the account numbering, the opening
+ * balance of zero — matches `createMember` exactly, because a member enrolled
+ * this way must be indistinguishable from any other in the ledger.
+ */
+export async function enrolExistingUserAsMember(
+  userId: string,
+  actorId: string
+): Promise<
+  | { ok: true; memberId: string; memberNumber: string; paymentReference: string }
+  | { ok: false; message: string }
+> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      email: true,
+      associationId: true,
+      member: { select: { id: true } },
+    },
+  });
+
+  if (!user) return { ok: false, message: "No such user" };
+
+  if (user.member) {
+    return { ok: false, message: "This account already has a member record" };
+  }
+
+  if (!user.associationId) {
+    // A platform-level super admin belongs to no association, so there is no
+    // register to enrol them into and no ledger their savings would sit in.
+    return {
+      ok: false,
+      message: "This account is not attached to an association",
+    };
+  }
+
+  const associationId = user.associationId;
+  const now = new Date();
+
+  const created = await prisma.$transaction(async (tx) => {
+    const association = await tx.association.findUniqueOrThrow({
+      where: { id: associationId },
+      select: { code: true, currency: true },
+    });
+
+    // Same atomic counter claim as `createMember`: counting rows would race
+    // two simultaneous enrolments onto one number.
+    const counter = await tx.association.update({
+      where: { id: associationId },
+      data: { memberRefSequence: { increment: 1 } },
+      select: { memberRefSequence: true },
+    });
+
+    const sequence = String(counter.memberRefSequence).padStart(6, "0");
+    const memberNumber = `${association.code}-M${sequence}`;
+    const paymentReference = `${association.code}-${sequence}`;
+
+    const member = await tx.member.create({
+      data: {
+        associationId,
+        userId,
+        memberNumber,
+        paymentReference,
+        // Active immediately. The approval step exists to admit a stranger who
+        // applied from the public site; this person is already staff of the
+        // association, vouched for by whoever appointed them.
+        status: "ACTIVE",
+        joinedAt: now,
+        approvedAt: now,
+        approvedById: actorId,
+        savingsAccounts: {
+          create: {
+            associationId,
+            accountNumber: `${association.code}-SA-${sequence}`,
+            currency: association.currency,
+            // Opens at zero. Money only ever enters through the ledger.
+            balance: "0",
+          },
+        },
+      },
+      select: { id: true },
+    });
+
+    await recordAudit(
+      {
+        action: AUDIT_ACTIONS.MEMBER_REGISTERED,
+        entityType: "Member",
+        entityId: member.id,
+        associationId,
+        newValue: {
+          memberNumber,
+          paymentReference,
+          fullName: `${user.firstName} ${user.lastName}`,
+          phone: user.phone,
+          email: user.email,
+          status: "ACTIVE",
+        },
+        // Named distinctly from "admin_enrolment" so that a later reviewer can
+        // pick out every staff member who opened an account for themselves.
+        metadata: { source: "staff_self_enrolment", userId, actorId },
+        severity: "NOTICE",
+      },
+      { id: actorId },
+      tx
+    );
+
+    return { memberId: member.id, memberNumber, paymentReference };
+  });
+
+  return { ok: true, ...created };
+}
+
+/**
  * Fields an administrator may edit, in the shape the audit diff records them.
  * Kept as one flat list so the "before" snapshot and the diff cannot drift.
  */

@@ -150,6 +150,55 @@ export interface MemberCopy {
     activeLoanTitle: string;
     activeLoanBody: string;
     viewMyLoan: string;
+
+    /** Repayment frequencies, keyed by the database enum. */
+    freqDAILY: string;
+    freqWEEKLY: string;
+    freqBIWEEKLY: string;
+    freqMONTHLY: string;
+    freqQUARTERLY: string;
+
+    productLabel: string;
+    productOption: string;
+    monthsCount: string;
+    notEligibleSavings: string;
+    notEligibleSavingsTenure: string;
+    amountLabel: string;
+    amountHint: string;
+    amountTooSmall: string;
+    amountTooLarge: string;
+    termLabel: string;
+    termHint: string;
+    termIssue: string;
+    frequencyLabel: string;
+    purposeLabel: string;
+    purposeHint: string;
+    purposePlaceholder: string;
+    guarantorsTitle: string;
+    guarantorsRequired: string;
+    guarantorsMissing: string;
+    guarantorName: string;
+    guarantorPhone: string;
+    submitApplication: string;
+    submitFailed: string;
+    ineligibleTitle: string;
+    successTitle: string;
+    successBody: string;
+    trackIt: string;
+
+    previewTitle: string;
+    previewEmpty: string;
+    lineLoanAmount: string;
+    lineProcessingFee: string;
+    lineInsuranceFee: string;
+    lineYouReceive: string;
+    lineInterest: string;
+    methodFlat: string;
+    methodReducing: string;
+    lineTotalRepay: string;
+    paymentLabel: string;
+    paymentsCount: string;
+    previewNote: string;
   };
   repayments: {
     title: string;
@@ -189,6 +238,36 @@ export interface MemberCopy {
     youReceive: string;
     noneYet: string;
     reviewNote: string;
+
+    formTitle: string;
+    availableNow: string;
+    hintMin: string;
+    hintMinMax: string;
+    payoutMethod: string;
+    methodMobileMoney: string;
+    methodBank: string;
+    methodCash: string;
+    mobileNumber: string;
+    bankAccount: string;
+    destinationHint: string;
+    accountNumberPlaceholder: string;
+    reasonLabel: string;
+    reasonPlaceholder: string;
+    amountRequested: string;
+    withdrawalFee: string;
+    deductedFromBalance: string;
+    errExceedsAvailable: string;
+    errBelowMinimum: string;
+    errAboveMaximum: string;
+    errMinimumBalance: string;
+    submitRequest: string;
+    approvalNote: string;
+    submitFailed: string;
+    successTitle: string;
+    successReference: string;
+    successUnderReview: string;
+    successPayingOut: string;
+    makeAnother: string;
   };
   statements: {
     title: string;
@@ -420,6 +499,64 @@ export const member: Record<Locale, MemberCopy> = {
       activeLoanBody:
         "This association allows one loan at a time. You can apply again once your current loan is fully repaid.",
       viewMyLoan: "View my loan",
+
+      freqDAILY: "Daily",
+      freqWEEKLY: "Weekly",
+      freqBIWEEKLY: "Every two weeks",
+      freqMONTHLY: "Monthly",
+      freqQUARTERLY: "Quarterly",
+
+      productLabel: "Loan product",
+      productOption: "{name} — {rate}% p.a.",
+      monthsCount: "{count} month|{count} months",
+      notEligibleSavings:
+        "You do not currently meet the requirements for this product. It needs at least {savings} in savings. You have {balance}.",
+      notEligibleSavingsTenure:
+        "You do not currently meet the requirements for this product. It needs at least {savings} in savings and {required} of membership. You have {balance} and {actual}.",
+      amountLabel: "Amount you need",
+      amountHint: "Up to {amount} based on your savings",
+      amountTooSmall: "The smallest loan under {product} is {amount}",
+      amountTooLarge:
+        "Based on your savings of {savings}, you can borrow up to {amount}",
+      termLabel: "Repayment period (months)",
+      termHint: "Between {min} and {max} months",
+      termIssue:
+        "The repayment period must be between {min} and {max} months",
+      frequencyLabel: "Repayment frequency",
+      purposeLabel: "What is the loan for?",
+      purposeHint: "Be specific — it helps the review committee decide",
+      purposePlaceholder:
+        "e.g. Buy two industrial sewing machines to take on school uniform contracts",
+      guarantorsTitle: "Guarantors",
+      guarantorsRequired:
+        "This product requires {count} guarantor.|This product requires {count} guarantors.",
+      guarantorsMissing:
+        "This product requires {count} guarantor|This product requires {count} guarantors",
+      guarantorName: "Guarantor {number} full name",
+      guarantorPhone: "Guarantor {number} phone",
+      submitApplication: "Submit application",
+      submitFailed: "Could not submit your application",
+      ineligibleTitle: "You are not eligible for this loan",
+      successTitle: "Application submitted",
+      successBody:
+        "Your loan application {reference} has been received. You will be notified once it has been reviewed.",
+      trackIt: "Track it here",
+
+      previewTitle: "What you would repay",
+      previewEmpty:
+        "Enter an amount and a repayment period to see your schedule.",
+      lineLoanAmount: "Loan amount",
+      lineProcessingFee: "Processing fee",
+      lineInsuranceFee: "Insurance fee",
+      lineYouReceive: "You receive",
+      lineInterest: "Interest ({rate}% {method})",
+      methodFlat: "flat",
+      methodReducing: "reducing",
+      lineTotalRepay: "Total to repay",
+      paymentLabel: "{frequency} payment",
+      paymentsCount: "{count} payments · first due {date}",
+      previewNote:
+        "The first payment includes the fees, so it is larger than the rest. Final terms are confirmed on approval.",
     },
     repayments: {
       title: "Repayments",
@@ -466,6 +603,37 @@ export const member: Record<Locale, MemberCopy> = {
       noneYet: "You have not requested any withdrawals.",
       reviewNote:
         "Withdrawals are reviewed by the association before payout. Money leaves your balance only once the payout has actually been made.",
+
+      formTitle: "Request a withdrawal",
+      availableNow: "You can withdraw up to {amount} right now.",
+      hintMin: "Minimum {min}",
+      hintMinMax: "Minimum {min} · maximum {max}",
+      payoutMethod: "Payout method",
+      methodMobileMoney: "Mobile money",
+      methodBank: "Bank transfer",
+      methodCash: "Cash at the office",
+      mobileNumber: "Mobile money number",
+      bankAccount: "Bank account",
+      destinationHint: "Leave blank to use the details on your profile",
+      accountNumberPlaceholder: "Account number",
+      reasonLabel: "Reason (optional)",
+      reasonPlaceholder: "What is the withdrawal for?",
+      amountRequested: "Amount requested",
+      withdrawalFee: "Withdrawal fee",
+      deductedFromBalance: "Deducted from your balance",
+      errExceedsAvailable: "This exceeds your available balance of {amount}.",
+      errBelowMinimum: "The minimum withdrawal is {amount}.",
+      errAboveMaximum: "The maximum withdrawal is {amount}.",
+      errMinimumBalance: "You must keep at least {amount} in your account.",
+      submitRequest: "Submit request",
+      approvalNote:
+        "Requests are reviewed by the association. Your balance is only reduced once the payout has been made.",
+      submitFailed: "Could not submit your request",
+      successTitle: "Withdrawal request submitted",
+      successReference: "Reference {reference}.",
+      successUnderReview: "An administrator will review it shortly.",
+      successPayingOut: "It will be paid out shortly.",
+      makeAnother: "Make another request",
     },
     statements: {
       title: "Statements",
@@ -711,6 +879,63 @@ export const member: Record<Locale, MemberCopy> = {
       activeLoanBody:
         "Iri huriro ryemera inguzanyo imwe icyarimwe. Uzashobora kongera gusaba nyuma yo kwishyura inguzanyo yawe yose.",
       viewMyLoan: "Reba inguzanyo yanjye",
+
+      freqDAILY: "Buri munsi",
+      freqWEEKLY: "Buri cyumweru",
+      freqBIWEEKLY: "Buri byumweru bibiri",
+      freqMONTHLY: "Buri kwezi",
+      freqQUARTERLY: "Buri mezi atatu",
+
+      productLabel: "Ubwoko bw'inguzanyo",
+      productOption: "{name} — {rate}% ku mwaka",
+      monthsCount: "ukwezi {count}|amezi {count}",
+      notEligibleSavings:
+        "Kugeza ubu ntabwo wujuje ibisabwa kuri ubu bwoko bw'inguzanyo. Busaba nibura {savings} mu buzigame. Ufite {balance}.",
+      notEligibleSavingsTenure:
+        "Kugeza ubu ntabwo wujuje ibisabwa kuri ubu bwoko bw'inguzanyo. Busaba nibura {savings} mu buzigame na {required} y'ubunyamuryango. Ufite {balance} na {actual}.",
+      amountLabel: "Amafaranga ukeneye",
+      amountHint: "Kugeza kuri {amount} ukurikije ubuzigame bwawe",
+      amountTooSmall: "Inguzanyo ntoya ishoboka muri {product} ni {amount}",
+      amountTooLarge:
+        "Ukurikije ubuzigame bwawe bwa {savings}, ushobora kuguza kugeza kuri {amount}",
+      termLabel: "Igihe cyo kwishyura (amezi)",
+      termHint: "Hagati y'amezi {min} na {max}",
+      termIssue: "Igihe cyo kwishyura kigomba kuba hagati y'amezi {min} na {max}",
+      frequencyLabel: "Uko kwishyura bisubirwamo",
+      purposeLabel: "Iyi nguzanyo igenewe iki?",
+      purposeHint: "Sobanura neza — bifasha komite isuzuma gufata icyemezo",
+      purposePlaceholder:
+        "urugero: Kugura imashini ebyiri z'uruganda zidoda kugira ngo mfate amasoko y'imyenda y'ishuri",
+      guarantorsTitle: "Abishingizi",
+      guarantorsRequired:
+        "Ubu bwoko busaba umwishingizi {count}.|Ubu bwoko busaba abishingizi {count}.",
+      guarantorsMissing:
+        "Ubu bwoko busaba umwishingizi {count}|Ubu bwoko busaba abishingizi {count}",
+      guarantorName: "Amazina yose y'umwishingizi wa {number}",
+      guarantorPhone: "Telefone y'umwishingizi wa {number}",
+      submitApplication: "Ohereza ubusabe",
+      submitFailed: "Ntibyashobotse kohereza ubusabe bwawe",
+      ineligibleTitle: "Ntabwo wujuje ibisabwa kuri iyi nguzanyo",
+      successTitle: "Ubusabe bwoherejwe",
+      successBody:
+        "Ubusabe bwawe bw'inguzanyo {reference} bwakiriwe. Uzamenyeshwa igihe buzaba bumaze gusuzumwa.",
+      trackIt: "Bukurikirane hano",
+
+      previewTitle: "Ibyo wakwishyura",
+      previewEmpty:
+        "Andika amafaranga n'igihe cyo kwishyura kugira ngo urebe gahunda yawe.",
+      lineLoanAmount: "Amafaranga y'inguzanyo",
+      lineProcessingFee: "Ikiguzi cyo gutunganya",
+      lineInsuranceFee: "Ikiguzi cy'ubwishingizi",
+      lineYouReceive: "Uzahabwa",
+      lineInterest: "Inyungu ({rate}% {method})",
+      methodFlat: "ihoraho",
+      methodReducing: "igabanuka",
+      lineTotalRepay: "Igiteranyo cyo kwishyura",
+      paymentLabel: "Ubwishyu {frequency}",
+      paymentsCount: "ubwishyu {count} · ubwa mbere ku wa {date}",
+      previewNote:
+        "Ubwishyu bwa mbere burimo n'ibiguzi, ni yo mpamvu buruta ubundi. Amasezerano ya nyuma yemezwa igihe inguzanyo yemewe.",
     },
     repayments: {
       title: "Kwishyura",
@@ -758,6 +983,39 @@ export const member: Record<Locale, MemberCopy> = {
       noneYet: "Ntiwasabye kubikuza na rimwe.",
       reviewNote:
         "Ubusabe bwo kubikuza busuzumwa n'ihuriro mbere yo kwishyurwa. Amafaranga akurwa ku konti yawe ari uko yishyuwe koko.",
+
+      formTitle: "Saba kubikuza",
+      availableNow: "Ubu ushobora kubikuza kugeza kuri {amount}.",
+      hintMin: "Ntoya ishoboka ni {min}",
+      hintMinMax: "Ntoya ishoboka ni {min} · nyinshi ishoboka ni {max}",
+      payoutMethod: "Uburyo bwo kwishyurwa",
+      methodMobileMoney: "Mobile money",
+      methodBank: "Kohereza kuri banki",
+      methodCash: "Amafaranga mu ntoki ku biro",
+      mobileNumber: "Nimero ya mobile money",
+      bankAccount: "Konti ya banki",
+      destinationHint:
+        "Sigara ubusa niba ushaka gukoresha amakuru ari kuri konti yawe",
+      accountNumberPlaceholder: "Nimero ya konti",
+      reasonLabel: "Impamvu (ntibigomba)",
+      reasonPlaceholder: "Aya mafaranga ugiye kuyakoresha iki?",
+      amountRequested: "Amafaranga wasabye",
+      withdrawalFee: "Ikiguzi cyo kubikuza",
+      deductedFromBalance: "Bikurwa ku mafaranga yawe",
+      errExceedsAvailable:
+        "Ibi birenze amafaranga ufite ashobora gukurwaho, ari yo {amount}.",
+      errBelowMinimum: "Amafaranga make ushobora kubikuza ni {amount}.",
+      errAboveMaximum: "Amafaranga menshi ushobora kubikuza ni {amount}.",
+      errMinimumBalance: "Ugomba gusigaza nibura {amount} kuri konti yawe.",
+      submitRequest: "Ohereza ubusabe",
+      approvalNote:
+        "Ubusabe busuzumwa n'ihuriro. Amafaranga yawe agabanuka ari uko wamaze kwishyurwa.",
+      submitFailed: "Ntibyashobotse kohereza ubusabe bwawe",
+      successTitle: "Ubusabe bwo kubikuza bwoherejwe",
+      successReference: "Nimero y'ubusabe {reference}.",
+      successUnderReview: "Umuyobozi agiye kubusuzuma vuba.",
+      successPayingOut: "Ugiye kwishyurwa vuba.",
+      makeAnother: "Saba ubundi bwikuze",
     },
     statements: {
       title: "Inyandiko za konti",

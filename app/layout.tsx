@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Poppins, Manrope } from "next/font/google";
 import { LanguageProvider } from "@/components/LanguageProvider";
+import { DEFAULT_LOCALE } from "@/lib/i18n/locale";
 import "./globals.css";
 
 /**
@@ -45,7 +46,8 @@ export const metadata: Metadata = {
     title: "Rwanda Tailors Association",
     description:
       "Empowering Tailors. Building Rwanda. The official association representing tailors across Rwanda.",
-    locale: "en_RW",
+    locale: "rw_RW",
+    alternateLocale: "en_RW",
     type: "website",
   },
 };
@@ -55,9 +57,14 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // `lang` carries the default language, not necessarily this reader's: the
+  // provider rewrites document.documentElement.lang as soon as it knows the
+  // stored choice. It has to be a static value here because the root layout is
+  // shared with the marketing pages, which are prerendered and must not be
+  // made dynamic by reading a cookie.
   return (
     <html
-      lang="en"
+      lang={DEFAULT_LOCALE}
       className={`${poppins.variable} ${manrope.variable} h-full antialiased`}
     >
       <body className="min-h-full bg-background text-ink">

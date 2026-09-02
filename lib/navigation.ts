@@ -23,6 +23,7 @@ import {
   Settings,
   ShieldCheck,
   ShieldQuestion,
+  UserPen,
   Users,
   Wallet,
 } from "lucide-react";
@@ -96,6 +97,7 @@ const MEMBER_NAV: NavSection[] = [
       { labelKey: "statements", href: "/dashboard/statements", icon: FileText },
       { labelKey: "notifications", href: "/dashboard/notifications", icon: Bell },
       { labelKey: "profile", href: "/dashboard/profile", icon: Settings },
+      { labelKey: "myDetails", href: "/account/profile", icon: UserPen },
     ],
   },
 ];
@@ -144,6 +146,10 @@ const PERSONAL_SECTION: NavSection = {
     },
     { labelKey: "qrCode", href: "/account/qr", icon: QrCode },
     { labelKey: "membershipCard", href: "/account/card", icon: IdCard },
+    // No `requiresMemberAccount` flag: a staff account with no savings of its
+    // own still has a name and a phone number to correct, and this is the only
+    // page in the tree that lets them do it.
+    { labelKey: "myDetails", href: "/account/profile", icon: UserPen },
   ],
 };
 

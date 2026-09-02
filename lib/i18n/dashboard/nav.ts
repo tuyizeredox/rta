@@ -21,6 +21,7 @@ export interface NavCopy {
   statements: string;
   notifications: string;
   profile: string;
+  myDetails: string;
 
   members: string;
   allMembers: string;
@@ -72,6 +73,7 @@ export const nav: Record<Locale, NavCopy> = {
     statements: "Statements",
     notifications: "Notifications",
     profile: "Profile",
+    myDetails: "My details",
 
     members: "Members",
     allMembers: "All members",
@@ -122,6 +124,7 @@ export const nav: Record<Locale, NavCopy> = {
     statements: "Inyandiko za konti",
     notifications: "Ubutumwa",
     profile: "Umwirondoro",
+    myDetails: "Amakuru yanjye",
 
     members: "Abanyamuryango",
     allMembers: "Abanyamuryango bose",

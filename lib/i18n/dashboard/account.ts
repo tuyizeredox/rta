@@ -99,6 +99,8 @@ export interface AccountCopy {
   card: {
     title: string;
     description: string;
+    previewTitle: string;
+    previewBody: string;
     frontTitle: string;
     frontBody: string;
     backTitle: string;
@@ -119,6 +121,38 @@ export interface AccountCopy {
     noPhotoYet: string;
     officeTitle: string;
     officeBody: string;
+  };
+  /// Editing your own details. Shared rather than member-only because an
+  /// administrator's name and phone number change too, and the page that lets
+  /// them fix it is the same page.
+  edit: {
+    title: string;
+    description: string;
+    contactSection: string;
+    contactHint: string;
+    personalSection: string;
+    personalHint: string;
+    livelihoodSection: string;
+    addressSection: string;
+    payoutSection: string;
+    payoutHint: string;
+    nextOfKinSection: string;
+    nextOfKinName: string;
+    nextOfKinPhone: string;
+    nextOfKinRelation: string;
+    save: string;
+    saving: string;
+    saved: string;
+    nothingChanged: string;
+    failed: string;
+    cancel: string;
+    matchingWarning: string;
+    verificationWarning: string;
+    nationalIdLocked: string;
+    adminOnlyTitle: string;
+    adminOnlyBody: string;
+    editProfile: string;
+    backToProfile: string;
   };
 }
 
@@ -223,6 +257,9 @@ export const account: Record<Locale, AccountCopy> = {
       title: "My membership card",
       description:
         "Your association card, ready to print. The front carries your name, your photograph and your sign-in code; the back is the same on every card.",
+      previewTitle: "How your card will look",
+      previewBody:
+        "Exactly what the two PDFs contain. If your photograph or telephone number is wrong here, it will be wrong on the printed card.",
       frontTitle: "Front of card",
       frontBody:
         "Your name, the office you hold, your telephone number and your QR code.",
@@ -250,6 +287,42 @@ export const account: Record<Locale, AccountCopy> = {
       officeTitle: "The line under your name",
       officeBody:
         "Your card prints the office you hold — Chairman, Treasurer — when an administrator has recorded one. Otherwise it prints your role.",
+    },
+    edit: {
+      title: "Edit my details",
+      description:
+        "Keep your details current so the association can reach you and your money reaches you.",
+      contactSection: "Name and contact",
+      contactHint:
+        "How the association reaches you about payments, loan decisions and withdrawals.",
+      personalSection: "Personal details",
+      personalHint: "Used to confirm who you are.",
+      livelihoodSection: "Work",
+      addressSection: "Where you live",
+      payoutSection: "Where your money is paid",
+      payoutHint:
+        "Withdrawals are sent to these. They are also used to recognise deposits you make without quoting your payment reference.",
+      nextOfKinSection: "Next of kin",
+      nextOfKinName: "Their name",
+      nextOfKinPhone: "Their phone",
+      nextOfKinRelation: "Relationship to you",
+      save: "Save changes",
+      saving: "Saving…",
+      saved: "Your details have been updated.",
+      nothingChanged: "Nothing was changed.",
+      failed: "Your details could not be saved.",
+      cancel: "Cancel",
+      matchingWarning:
+        "Changing your phone, mobile money or bank account changes where the association looks when money arrives without a payment reference. Enter numbers that belong to you, and check them before saving.",
+      verificationWarning:
+        "A new phone number or email address has to be confirmed again before it counts as verified.",
+      nationalIdLocked:
+        "Your identity has been verified against this national ID, so it can only be changed by an administrator.",
+      adminOnlyTitle: "What an administrator has to change for you",
+      adminOnlyBody:
+        "Your membership number, payment reference and membership status are not editable here. They are the identity your payments are matched by, so changing one is an administrator's decision and is recorded as such.",
+      editProfile: "Edit my details",
+      backToProfile: "Back to profile",
     },
   },
 
@@ -354,6 +427,9 @@ export const account: Record<Locale, AccountCopy> = {
       title: "Ikarita yanjye y'ubunyamuryango",
       description:
         "Ikarita yawe y'ishyirahamwe, yiteguye gucapwa. Imbere hari izina ryawe, ifoto yawe na kode yawe yo kwinjira; inyuma ni kimwe kuri buri karita.",
+      previewTitle: "Uko ikarita yawe izasa",
+      previewBody:
+        "Ni byo nyine biri muri za PDF zombi. Niba ifoto cyangwa nimero ya telefone bitari byo hano, ntibizaba byo no ku ikarita icapwe.",
       frontTitle: "Imbere y'ikarita",
       frontBody: "Izina ryawe, umwanya ufite, nimero ya telefone na kode yawe ya QR.",
       backTitle: "Inyuma y'ikarita",
@@ -380,6 +456,42 @@ export const account: Record<Locale, AccountCopy> = {
       officeTitle: "Umurongo uri munsi y'izina ryawe",
       officeBody:
         "Ikarita yawe icapa umwanya ufite — Perezida, Umubitsi — iyo umuyobozi yawanditse. Bitaba ibyo, icapa uruhare rwawe.",
+    },
+    edit: {
+      title: "Hindura amakuru yanjye",
+      description:
+        "Komeza uvugurure amakuru yawe kugira ngo ihuriro rikubone kandi amafaranga yawe akugereho.",
+      contactSection: "Izina n'aho bakugeraho",
+      contactHint:
+        "Uko ihuriro rikumenyesha ibijyanye n'ubwishyu, ibyemezo by'inguzanyo no kubikuza.",
+      personalSection: "Amakuru bwite",
+      personalHint: "Akoreshwa mu kwemeza uwo uri we.",
+      livelihoodSection: "Akazi",
+      addressSection: "Aho utuye",
+      payoutSection: "Aho amafaranga yawe yoherezwa",
+      payoutHint:
+        "Ibyo ubikuza byoherezwa kuri izi nimero. Zinakoreshwa mu kumenya ubwitso wakoze utanditse nimero yawe y'ubwishyu.",
+      nextOfKinSection: "Uwo mwegereye",
+      nextOfKinName: "Izina rye",
+      nextOfKinPhone: "Telefone ye",
+      nextOfKinRelation: "Isano afitanye nawe",
+      save: "Bika impinduka",
+      saving: "Birabikwa…",
+      saved: "Amakuru yawe yavuguruwe.",
+      nothingChanged: "Nta cyahindutse.",
+      failed: "Amakuru yawe ntiyashoboye kubikwa.",
+      cancel: "Reka",
+      matchingWarning:
+        "Guhindura telefone, mobile money cyangwa konti ya banki bihindura aho ihuriro rireba iyo amafaranga aje adafite nimero y'ubwishyu. Andika nimero ziri izawe, kandi uzisuzume mbere yo kubika.",
+      verificationWarning:
+        "Nimero ya telefone nshya cyangwa imeyili nshya bigomba kongera kwemezwa mbere yo kubarwa nk'ibyemejwe.",
+      nationalIdLocked:
+        "Umwirondoro wawe wemejwe hakoreshejwe iyi ndangamuntu, ku buryo ihindurwa n'umuyobozi gusa.",
+      adminOnlyTitle: "Ibyo umuyobozi agomba guhindura akwiyambaje",
+      adminOnlyBody:
+        "Nimero y'ubunyamuryango, nimero y'ubwishyu n'imiterere y'ubunyamuryango ntibihindurirwa hano. Ni byo bigena uko ubwishyu bwawe buhuzwa, bityo kubihindura ni icyemezo cy'umuyobozi kandi kirandikwa.",
+      editProfile: "Hindura amakuru yanjye",
+      backToProfile: "Subira ku mwirondoro",
     },
   },
 };

@@ -664,7 +664,7 @@ export const member: Record<Locale, MemberCopy> = {
       changePassword: "Change password",
       incompleteTitle: "Your contact details are incomplete",
       incompleteBody:
-        "The association uses your phone and email to notify you about payments, loan decisions and withdrawals. Ask an administrator to update them.",
+        "The association uses your phone and email to notify you about payments, loan decisions and withdrawals. Add them on your details page.",
       yourReference: "Your payment reference",
       yourReferenceBody:
         "Quote this on every deposit so it is credited to your account automatically. A payment without it has to be matched by hand and will take longer to appear.",
@@ -692,7 +692,7 @@ export const member: Record<Locale, MemberCopy> = {
       theirPhone: "Their phone",
       relationship: "Relationship",
       maintainedNote:
-        "These details are maintained by the association. To correct anything on this page, contact",
+        "Your membership number, payment reference and membership status are set by the association and are not editable here. To correct one of those, contact",
       anAdministrator: "an administrator",
       orCall: "or call {phone}",
     },
@@ -1046,7 +1046,7 @@ export const member: Record<Locale, MemberCopy> = {
       changePassword: "Hindura ijambobanga",
       incompleteTitle: "Amakuru yawe yo kuvugana ntuzuye",
       incompleteBody:
-        "Ihuriro rikoresha telefone na imeyili yawe mu kumenyesha ibijyanye n'ubwishyu, ibyemezo by'inguzanyo no kubikuza. Saba umuyobozi kuyavugurura.",
+        "Ihuriro rikoresha telefone na imeyili yawe mu kumenyesha ibijyanye n'ubwishyu, ibyemezo by'inguzanyo no kubikuza. Yandike ku rupapuro rw'amakuru yawe.",
       yourReference: "Nimero yawe y'ubwishyu",
       yourReferenceBody:
         "Andika iyi nimero kuri buri bwitso kugira ngo yandikwe kuri konti yawe ako kanya. Ubwishyu butayifite bugomba guhuzwa n'intoki kandi butinda kugaragara.",
@@ -1074,7 +1074,7 @@ export const member: Record<Locale, MemberCopy> = {
       theirPhone: "Telefone ye",
       relationship: "Isano",
       maintainedNote:
-        "Aya makuru abikwa n'ihuriro. Kugira ngo ukosore ikintu kiri kuri uru rupapuro, vugana na",
+        "Nimero y'ubunyamuryango, nimero y'ubwishyu n'imiterere y'ubunyamuryango bishyirwaho n'ihuriro kandi ntibihindurirwa hano. Kugira ngo ukosore kimwe muri byo, vugana na",
       anAdministrator: "umuyobozi",
       orCall: "cyangwa uhamagare {phone}",
     },

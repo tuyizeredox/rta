@@ -240,12 +240,12 @@ function UserMenu({ user }: { user: ShellUser }) {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 
-  // Keyed on having a member record rather than on role. `/account/profile`
-  // does not exist, so the old role test sent every administrator to a 404 —
-  // and now that staff can hold a member record of their own, the member
-  // profile is the right page for the ones who do. The rest get their account
-  // status, which is where a staff account's own details live.
-  const profileHref = user.memberNumber ? "/dashboard/profile" : "/account/status";
+  // Keyed on having a member record rather than on role. A member's profile is
+  // their whole file — the association's record of them, with their payment
+  // reference at the top — so that is where "my profile" belongs for anyone who
+  // has one. A staff account with no membership has no such file, and goes
+  // straight to the form where its name and phone number are edited.
+  const profileHref = user.memberNumber ? "/dashboard/profile" : "/account/profile";
 
   return (
     <DropdownMenu.Root>

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db/prisma";
 import { renderQrPng } from "@/lib/qr";
 import { getActiveQrCode, issueQrCode, type QrActor } from "@/lib/auth/qr-access";
 import { toLocalPhone } from "@/lib/phone";
+import { probeImage } from "@/lib/images/probe";
 import { CARD, FRONT, TEMPLATE_FILES, type CardSide } from "@/lib/cards/geometry";
 
 /**
@@ -28,14 +29,26 @@ import { CARD, FRONT, TEMPLATE_FILES, type CardSide } from "@/lib/cards/geometry
  * and belongs in the artwork rather than in this file.
  */
 
-const TEMPLATE_DIR = path.join(process.cwd(), "public", "images");
+const TEMPLATE_DIR = path.join(process.cwd(), "public");
 
 /** Ink colours sampled from the association's artwork. */
 const INK = {
   name: rgb(0.13, 0.13, 0.15),
   body: rgb(0.16, 0.16, 0.18),
   placeholder: rgb(0.85, 0.88, 0.92),
+  /// The artwork's mid blue, used for the keyline around the code.
+  frame: rgb(0.11, 0.5, 0.83),
 } as const;
+
+/** The association's mark, for the middle of the QR. Null if it is missing. */
+async function loadLogo(): Promise<Uint8Array | null> {
+  try {
+    const file = await fs.readFile(path.join(TEMPLATE_DIR, "images", "rtalogo.jpg"));
+    return new Uint8Array(file);
+  } catch {
+    return null;
+  }
+}
 
 export interface MembershipCardData {
   /// Family name first — the order the printed card reads in, which is the
@@ -137,6 +150,35 @@ function fitText(
 }
 
 /**
+ * The type sizes the front will actually be printed at, as a fraction of card
+ * height.
+ *
+ * THE PREVIEW CALLS THIS TOO, and that is the whole point. A long name is
+ * shrunk to fit, and if the on-screen preview did its own guessing the two
+ * would disagree exactly when it matters most — which is the moment somebody
+ * approves a card for printing. One measurement, two renderers.
+ */
+export async function getCardTextSizes(data: MembershipCardData): Promise<{
+  name: number;
+  title: number;
+  phone: number;
+}> {
+  const doc = await PDFDocument.create();
+  const regular = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+
+  const fit = (text: string, font: PDFFont, box: { size: number; maxWidth: number }) =>
+    fitText(text, font, box.size * CARD.heightPt, box.maxWidth * CARD.widthPt) /
+    CARD.heightPt;
+
+  return {
+    name: fit(data.displayName, regular, FRONT.name),
+    title: fit(data.title, bold, FRONT.title),
+    phone: fit(data.phone, regular, FRONT.phone),
+  };
+}
+
+/**
  * Draws a value at a top-left anchor expressed in card fractions.
  *
  * PDF measures from the bottom of the page and text from its baseline, so the
@@ -182,7 +224,15 @@ async function drawGround(
     return;
   }
 
-  const art = await doc.embedPng(template);
+  // The artwork's format is whatever the association exported, so it is read
+  // from the bytes rather than assumed from the extension — embedPng on a JPEG
+  // throws, and a card that fails to render is worse than one drawn plain.
+  const probed = probeImage(template);
+  const art =
+    probed?.mimeType === "image/jpeg"
+      ? await doc.embedJpg(template)
+      : await doc.embedPng(template);
+
   page.drawImage(art, { x: 0, y: 0, width: CARD.widthPt, height: CARD.heightPt });
 }
 
@@ -209,13 +259,43 @@ export async function renderCardFront(data: MembershipCardData): Promise<Uint8Ar
   const qrPng = await renderQrPng(data.qrUrl, { size: 1024 });
   const qr = await doc.embedPng(new Uint8Array(qrPng));
   const qrSize = FRONT.qr.size * CARD.widthPt;
+  const qrX = FRONT.qr.x * CARD.widthPt;
+  const qrY = CARD.heightPt - FRONT.qr.y * CARD.heightPt - qrSize;
 
-  page.drawImage(qr, {
-    x: FRONT.qr.x * CARD.widthPt,
-    y: CARD.heightPt - FRONT.qr.y * CARD.heightPt - qrSize,
+  page.drawImage(qr, { x: qrX, y: qrY, width: qrSize, height: qrSize });
+
+  // The blue keyline, drawn over the code's own white quiet zone so the frame
+  // sits tight against the modules exactly as it does in the artwork.
+  const stroke = FRONT.qrFrame.stroke * CARD.widthPt;
+  page.drawRectangle({
+    x: qrX,
+    y: qrY,
     width: qrSize,
     height: qrSize,
+    borderColor: INK.frame,
+    borderWidth: stroke,
   });
+
+  // The association's mark in the middle of the code, on its own white ground
+  // so it reads as placed rather than as damage to the symbol.
+  const mark = await loadLogo();
+  if (mark) {
+    const markSize = FRONT.qrLogo.size * qrSize;
+    const markX = qrX + (qrSize - markSize) / 2;
+    const markY = qrY + (qrSize - markSize) / 2;
+    const pad = markSize * 0.08;
+
+    page.drawRectangle({
+      x: markX - pad,
+      y: markY - pad,
+      width: markSize + pad * 2,
+      height: markSize + pad * 2,
+      color: rgb(1, 1, 1),
+    });
+
+    const logo = await doc.embedJpg(mark);
+    page.drawImage(logo, { x: markX, y: markY, width: markSize, height: markSize });
+  }
 
   // --- Photograph ----------------------------------------------------------
   // The stored image is already a circle on a transparent ground, cropped in

@@ -36,6 +36,12 @@ export const AUDIT_ACTIONS = {
   USER_EMAIL_VERIFIED: "USER_EMAIL_VERIFIED",
   USER_PHONE_VERIFIED: "USER_PHONE_VERIFIED",
   USER_SESSIONS_REVOKED: "USER_SESSIONS_REVOKED",
+  /// Someone edited their own details. Deliberately distinct from
+  /// MEMBER_UPDATED, which means an administrator edited somebody else's file:
+  /// when money later lands in the wrong account, "who changed the matching
+  /// key" and "did the account holder change it themselves" are different
+  /// questions, and one action verb covering both cannot answer the second.
+  USER_PROFILE_UPDATED: "USER_PROFILE_UPDATED",
   /// Printable sign-in QR codes. Issue and revocation are ordinary account
   /// events; a scan is recorded separately from USER_LOGGED_IN so that "how
   /// did this session start" is answerable from the log alone, and a rejected

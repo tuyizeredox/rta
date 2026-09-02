@@ -31,14 +31,24 @@ import {
  *     get lost.
  */
 
-/** Optional free text: empty strings arrive from untouched form fields. */
+/**
+ * Optional free text: empty strings arrive from untouched form fields.
+ *
+ * The empty string is folded to undefined by a transform rather than by an
+ * `.or(z.literal(""))` branch, because that branch is unreachable — "" is a
+ * perfectly good string of no more than `max` characters, so the first arm of
+ * the union always matches it and "" reaches the database as "". Every other
+ * optional field in this file resolves to undefined when it is blank; a
+ * cleared occupation has to do the same, or "not recorded" and "recorded as
+ * nothing" become two different states that render differently.
+ */
 function optionalText(max: number, label?: string) {
   return z
     .string()
     .trim()
     .max(max, label ? `${label} is too long` : `Must be ${max} characters or fewer`)
     .optional()
-    .or(z.literal("").transform(() => undefined));
+    .transform((value) => value || undefined);
 }
 
 /** Optional Rwandan mobile, normalised to E.164 so matching keys line up. */
@@ -62,8 +72,13 @@ function optionalPhone(message: string) {
 /**
  * Every field of a member's file. Enrolment adds the status decision on top;
  * editing takes it as it stands — see the two schemas below.
+ *
+ * Exported because self-service editing asks for the same facts about the same
+ * person — see lib/validation/profile.ts, which picks its subset out of this
+ * object rather than restating the rules. A phone number that is valid when an
+ * administrator types it must be valid when the member types it themselves.
  */
-const memberFieldsSchema = z.object({
+export const memberFieldsSchema = z.object({
   // Identity ----------------------------------------------------------------
   firstName: z.string().trim().min(2, "Enter the member's first name").max(60),
   lastName: z.string().trim().min(2, "Enter the member's last name").max(60),

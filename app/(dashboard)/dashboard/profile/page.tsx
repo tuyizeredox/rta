@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { KeyRound, ShieldCheck, UserRound } from "lucide-react";
+import { KeyRound, ShieldCheck, UserPen, UserRound } from "lucide-react";
 import { requireMember } from "@/lib/auth/guards";
 import { getMemberSelfProfile } from "@/lib/services/member-queries";
 import { getDashboardCopy } from "@/lib/i18n/server";
@@ -47,18 +47,29 @@ export default async function MemberProfilePage() {
         title={copy.title}
         description={copy.description}
         actions={
-          <Button asChild variant="outline" size="sm">
-            <Link href="/account/password">
-              <KeyRound className="size-3.5" aria-hidden="true" />
-              {copy.changePassword}
-            </Link>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild size="sm">
+              <Link href="/account/profile">
+                <UserPen className="size-3.5" aria-hidden="true" />
+                {d.account.edit.editProfile}
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/account/password">
+                <KeyRound className="size-3.5" aria-hidden="true" />
+                {copy.changePassword}
+              </Link>
+            </Button>
+          </div>
         }
       />
 
       {contactIncomplete && (
         <Alert variant="warning" title={copy.incompleteTitle}>
-          {copy.incompleteBody}
+          {copy.incompleteBody}{" "}
+          <Link href="/account/profile" className="font-semibold underline">
+            {d.account.edit.editProfile}
+          </Link>
         </Alert>
       )}
 

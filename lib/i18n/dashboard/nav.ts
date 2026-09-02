@@ -17,6 +17,7 @@ export interface NavCopy {
   myDashboard: string;
   accountStatus: string;
   qrCode: string;
+  membershipCard: string;
   statements: string;
   notifications: string;
   profile: string;
@@ -67,6 +68,7 @@ export const nav: Record<Locale, NavCopy> = {
     myDashboard: "My overview",
     accountStatus: "Account status",
     qrCode: "My QR code",
+    membershipCard: "My card",
     statements: "Statements",
     notifications: "Notifications",
     profile: "Profile",
@@ -116,6 +118,7 @@ export const nav: Record<Locale, NavCopy> = {
     myDashboard: "Incamake yanjye",
     accountStatus: "Uko konti ihagaze",
     qrCode: "Kode yanjye ya QR",
+    membershipCard: "Ikarita yanjye",
     statements: "Inyandiko za konti",
     notifications: "Ubutumwa",
     profile: "Umwirondoro",

@@ -96,6 +96,30 @@ export interface AccountCopy {
     signIn: string;
     help: string;
   };
+  card: {
+    title: string;
+    description: string;
+    frontTitle: string;
+    frontBody: string;
+    backTitle: string;
+    backBody: string;
+    download: string;
+    preparing: string;
+    failed: string;
+    printTitle: string;
+    printBody: string;
+    photoTitle: string;
+    photoBody: string;
+    choosePhoto: string;
+    replacePhoto: string;
+    removePhoto: string;
+    uploading: string;
+    photoFailed: string;
+    photoTooSmall: string;
+    noPhotoYet: string;
+    officeTitle: string;
+    officeBody: string;
+  };
 }
 
 export const account: Record<Locale, AccountCopy> = {
@@ -195,6 +219,38 @@ export const account: Record<Locale, AccountCopy> = {
       signIn: "Sign in with a password",
       help: "If you did not scan this yourself, tell an administrator.",
     },
+    card: {
+      title: "My membership card",
+      description:
+        "Your association card, ready to print. The front carries your name, your photograph and your sign-in code; the back is the same on every card.",
+      frontTitle: "Front of card",
+      frontBody:
+        "Your name, the office you hold, your telephone number and your QR code.",
+      backTitle: "Back of card",
+      backBody:
+        "The association's notice and the numbers to ring if your card is found. Identical on every member's card.",
+      download: "Download PDF",
+      preparing: "Preparing…",
+      failed: "The card could not be prepared. Try again.",
+      printTitle: "Printing this card",
+      printBody:
+        "Both files are exactly 85.6 × 54 mm — standard card size. Give them to a print shop as they are, and do not let the printer scale them to fit the page.",
+      photoTitle: "Your photograph",
+      photoBody:
+        "This is what appears on the front of your card. Choose a picture of your face, taken straight on. It is trimmed to a circle automatically.",
+      choosePhoto: "Choose a photograph",
+      replacePhoto: "Change photograph",
+      removePhoto: "Remove",
+      uploading: "Uploading…",
+      photoFailed: "That photograph could not be saved. Try another one.",
+      photoTooSmall:
+        "That picture is too small to print clearly. Choose one at least 128 pixels across.",
+      noPhotoYet:
+        "No photograph yet. Your card will print with an empty circle until you add one.",
+      officeTitle: "The line under your name",
+      officeBody:
+        "Your card prints the office you hold — Chairman, Treasurer — when an administrator has recorded one. Otherwise it prints your role.",
+    },
   },
 
   rw: {
@@ -293,6 +349,37 @@ export const account: Record<Locale, AccountCopy> = {
         "Injira ukoresheje ijambobanga, hanyuma ukore kode nshya uhereye kuri konti yawe.",
       signIn: "Injira ukoresheje ijambobanga",
       help: "Niba atari wowe wafashe iyi kode, bwira umuyobozi.",
+    },
+    card: {
+      title: "Ikarita yanjye y'ubunyamuryango",
+      description:
+        "Ikarita yawe y'ishyirahamwe, yiteguye gucapwa. Imbere hari izina ryawe, ifoto yawe na kode yawe yo kwinjira; inyuma ni kimwe kuri buri karita.",
+      frontTitle: "Imbere y'ikarita",
+      frontBody: "Izina ryawe, umwanya ufite, nimero ya telefone na kode yawe ya QR.",
+      backTitle: "Inyuma y'ikarita",
+      backBody:
+        "Ubutumwa bw'ishyirahamwe na nimero zo guhamagara nihagira ubona ikarita yawe. Ni kimwe kuri buri munyamuryango.",
+      download: "Kuramo PDF",
+      preparing: "Biritegurwa…",
+      failed: "Ikarita ntiyashoboye gutegurwa. Ongera ugerageze.",
+      printTitle: "Gucapa iyi karita",
+      printBody:
+        "Dosiye zombi ni 85.6 × 54 mm neza — ingano isanzwe y'ikarita. Zishyikirize aho bacapa uko ziri, kandi ntukemere ko mucapyi azihindura ngo zikwire urupapuro.",
+      photoTitle: "Ifoto yawe",
+      photoBody:
+        "Ni yo igaragara imbere ku ikarita yawe. Hitamo ifoto y'isura yawe, ureba imbere. Ihita ikatwa igakora uruziga.",
+      choosePhoto: "Hitamo ifoto",
+      replacePhoto: "Hindura ifoto",
+      removePhoto: "Kuraho",
+      uploading: "Iroherezwa…",
+      photoFailed: "Iyi foto ntiyashoboye kubikwa. Gerageza indi.",
+      photoTooSmall:
+        "Iyi foto ni nto cyane ngo icapwe neza. Hitamo ifite nibura pigiseli 128 z'ubugari.",
+      noPhotoYet:
+        "Nta foto irahari. Ikarita yawe izacapwa ifite uruziga rusa n'ubusa kugeza wongeyeho imwe.",
+      officeTitle: "Umurongo uri munsi y'izina ryawe",
+      officeBody:
+        "Ikarita yawe icapa umwanya ufite — Perezida, Umubitsi — iyo umuyobozi yawanditse. Bitaba ibyo, icapa uruhare rwawe.",
     },
   },
 };

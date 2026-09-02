@@ -18,6 +18,7 @@ import {
   Link2,
   PiggyBank,
   QrCode,
+  IdCard,
   ScrollText,
   Settings,
   ShieldCheck,
@@ -91,6 +92,7 @@ const MEMBER_NAV: NavSection[] = [
     items: [
       { labelKey: "accountStatus", href: "/account/status", icon: ShieldQuestion },
       { labelKey: "qrCode", href: "/account/qr", icon: QrCode },
+      { labelKey: "membershipCard", href: "/account/card", icon: IdCard },
       { labelKey: "statements", href: "/dashboard/statements", icon: FileText },
       { labelKey: "notifications", href: "/dashboard/notifications", icon: Bell },
       { labelKey: "profile", href: "/dashboard/profile", icon: Settings },
@@ -141,6 +143,7 @@ const PERSONAL_SECTION: NavSection = {
       requiresMemberAccount: true,
     },
     { labelKey: "qrCode", href: "/account/qr", icon: QrCode },
+    { labelKey: "membershipCard", href: "/account/card", icon: IdCard },
   ],
 };
 

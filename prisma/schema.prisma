@@ -414,6 +414,13 @@ model User {
   lastName  String
   avatarUrl String?
 
+  /// Office held in the association — "Chairman", "Treasurer", "Secretary".
+  /// Deliberately separate from `role`: role is what the software permits them
+  /// to do, this is what the membership card prints under their name. Null
+  /// falls back to the role label, so an ordinary member's card still reads
+  /// sensibly without anyone filling this in.
+  title     String?
+
   /// Argon2id hash. Never a plaintext or reversible value.
   passwordHash       String
   passwordChangedAt  DateTime?
@@ -447,6 +454,7 @@ model User {
   loginActivities    LoginActivity[]
   verificationTokens VerificationToken[]
   accessQrCodes      AccessQrCode[]
+  avatar             UserAvatar?
   permissions        UserPermission[]
   notifications      Notification[]
   auditLogs          AuditLog[]
@@ -545,6 +553,37 @@ model VerificationToken {
 /// bank card makes — and it is why every code carries an expiry, why issuing a
 /// new one revokes the old, and why every issue, scan and revocation is
 /// audited.
+/// The photograph printed on a membership card.
+///
+/// A TABLE OF ITS OWN, NOT A COLUMN ON `users`. The bytes are the largest
+/// thing the account owns, and a `findMany` that forgets to `select` would
+/// otherwise drag every member's photograph across the wire to render a list
+/// of names. Keeping it separate makes that impossible rather than merely
+/// discouraged.
+///
+/// Stored in the database rather than on disk because the app runs on Render,
+/// whose filesystem is ephemeral — a photograph written next to the process
+/// would vanish on the next deploy. There is no object store configured, and
+/// a card photograph resized to 512px is a few tens of kilobytes.
+model UserAvatar {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  data     Bytes
+  mimeType String
+  /// Bytes, kept alongside so a size check never has to load the image.
+  sizeBytes Int
+  /// Longest edge in pixels, recorded at upload so the card renderer can tell
+  /// a usable photograph from one too small to print at 300dpi.
+  width  Int
+  height Int
+
+  uploadedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("user_avatars")
+}
+
 model AccessQrCode {
   id     String @id @default(cuid())
   userId String

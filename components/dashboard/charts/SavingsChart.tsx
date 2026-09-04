@@ -253,3 +253,66 @@ export function MonthlyBarChart({
     </ResponsiveContainer>
   );
 }
+
+/**
+ * THE THREE FLOWS THAT MUST NOT BE CONFUSED.
+ *
+ * The platform's service fee, the association's half of the loan interest, and
+ * the members' half. Drawn as grouped bars rather than stacked, deliberately:
+ * stacking implies a meaningful total, and these three have three different
+ * owners. A column whose height was "fee + association + member" would be a
+ * number nobody could spend.
+ *
+ * Amber for the fee — the same amber this file uses for money leaving a
+ * member — teal for the association's own income, and a lighter teal for the
+ * share returned to members, so the two halves of one interest payment read as
+ * related without reading as the same thing.
+ */
+export function FundsFlowChart({
+  data,
+  labels,
+}: {
+  data: {
+    label: string;
+    platformFee: string;
+    associationInterest: string;
+    memberInterest: string;
+  }[];
+  labels: { fee: string; association: string; member: string };
+}) {
+  const { locale } = useLanguage();
+
+  const plotted = data.map((row) => ({
+    label: formatMonthLabel(row.label, locale),
+    [labels.fee]: toPlot(row.platformFee),
+    [labels.association]: toPlot(row.associationInterest),
+    [labels.member]: toPlot(row.memberInterest),
+  }));
+
+  return (
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={plotted} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke={GRID} vertical={false} />
+        <XAxis dataKey="label" {...axisProps} />
+        <YAxis
+          {...axisProps}
+          tickFormatter={(v) => formatMoneyCompact(String(v)).replace("RWF ", "")}
+        />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(32,178,170,0.06)" }} />
+        <Legend
+          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+          iconType="circle"
+          iconSize={8}
+        />
+        <Bar dataKey={labels.fee} fill={AMBER} radius={[4, 4, 0, 0]} maxBarSize={18} />
+        <Bar
+          dataKey={labels.association}
+          fill={TEAL_DARK}
+          radius={[4, 4, 0, 0]}
+          maxBarSize={18}
+        />
+        <Bar dataKey={labels.member} fill={TEAL} radius={[4, 4, 0, 0]} maxBarSize={18} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}

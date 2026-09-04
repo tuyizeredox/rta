@@ -59,6 +59,18 @@ export const NOTIFICATION_EVENTS = {
   PAYMENT_UNMATCHED: "PAYMENT_UNMATCHED",
   SAVINGS_BALANCE_UPDATED: "SAVINGS_BALANCE_UPDATED",
 
+  /// The daily contribution. CONTRIBUTION_DUE_WARNING is the one that matters:
+  /// it goes out BEFORE the fine, naming the exact amount that would clear the
+  /// arrears. A platform that fines people it never warned is a platform
+  /// members leave.
+  CONTRIBUTION_DUE_WARNING: "CONTRIBUTION_DUE_WARNING",
+  CONTRIBUTION_FINE_CHARGED: "CONTRIBUTION_FINE_CHARGED",
+  CONTRIBUTION_BACK_ON_TRACK: "CONTRIBUTION_BACK_ON_TRACK",
+  /// The borrower's own half of the loan interest, credited to their savings.
+  INTEREST_SHARE_CREDITED: "INTEREST_SHARE_CREDITED",
+  /// A rule the member lives under was amended.
+  RULE_CHANGED: "RULE_CHANGED",
+
   WITHDRAWAL_SUBMITTED: "WITHDRAWAL_SUBMITTED",
   WITHDRAWAL_APPROVED: "WITHDRAWAL_APPROVED",
   WITHDRAWAL_REJECTED: "WITHDRAWAL_REJECTED",

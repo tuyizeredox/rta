@@ -27,6 +27,16 @@ export interface TemplateContext {
   reason?: string;
   actionUrl?: string;
   paymentReference?: string;
+
+  // Contribution discipline. `daysBehind` and `daysUntilFine` are counts, not
+  // money, and are rendered as plain numbers.
+  daysBehind?: number;
+  daysUntilFine?: number;
+  /// What the member must pay to be fully up to date, arrears plus any fine.
+  clearingAmount?: string;
+  fineRate?: string;
+  /// The rule that changed, or that a warning is issued under.
+  ruleTitle?: string;
 }
 
 export interface RenderedNotification {
@@ -101,6 +111,77 @@ export function renderNotification(
         emailText: `Dear ${firstName},\n\nWe have received your contribution of ${formatMoney(context.amount)}.\n\nTransaction reference: ${context.reference}\nYour savings balance is now ${formatMoney(context.balance)}.\n\nThank you.\n\n${associationName}`,
         severity: "SUCCESS",
         actionUrl: "/dashboard/savings/transactions",
+      };
+
+    // THE MESSAGE THAT PREVENTS A FINE.
+    //
+    // Sent while there is still time to act, and written so the member never
+    // has to work anything out: how far behind, how long they have, and the
+    // single figure that clears it. Everything else in this file reports
+    // something that already happened; this one exists to stop something
+    // happening, so the amount and the deadline lead.
+    case NOTIFICATION_EVENTS.CONTRIBUTION_DUE_WARNING:
+      return {
+        title:
+          context.daysUntilFine === 0
+            ? "Your saving is due today"
+            : `${context.daysBehind} days behind on saving`,
+        body: `You are ${context.daysBehind} day(s) behind on your daily saving. Pay ${formatMoney(context.clearingAmount)} ${
+          context.daysUntilFine === 0
+            ? "today"
+            : `within ${context.daysUntilFine} day(s)`
+        } to stay clear of the ${context.fineRate}% fine.`,
+        sms: `${associationName}: you are ${context.daysBehind} days behind on saving. Pay ${smsMoney(context.clearingAmount)} within ${context.daysUntilFine} days to avoid the ${context.fineRate}% fine. Ref ${context.paymentReference}.`,
+        emailSubject: `Action needed: ${context.daysBehind} days behind on your saving`,
+        emailText: `Dear ${firstName},\n\nYou are ${context.daysBehind} day(s) behind on your daily saving.\n\nTo be fully up to date, pay ${formatMoney(context.clearingAmount)} quoting your reference ${context.paymentReference}.\n\nIf you are still behind in ${context.daysUntilFine} day(s), a fine of ${context.fineRate}% of the unpaid saving is added automatically. Paying before then avoids it entirely.\n\nIf you cannot pay at the moment, speak to the association - a break can be agreed rather than a fine applied.\n\n${associationName}`,
+        severity: "WARNING",
+        actionUrl: "/dashboard/savings/deposit",
+      };
+
+    case NOTIFICATION_EVENTS.CONTRIBUTION_FINE_CHARGED:
+      return {
+        title: "A fine has been added",
+        body: `You were ${context.daysBehind} days behind on your saving, so a fine of ${formatMoney(context.amount)} has been added. Pay ${formatMoney(context.clearingAmount)} to clear everything.`,
+        sms: `${associationName}: fine of ${smsMoney(context.amount)} added after ${context.daysBehind} days behind. Total to clear ${smsMoney(context.clearingAmount)}. Ref ${context.paymentReference}.`,
+        emailSubject: `A fine of ${formatMoney(context.amount)} has been added to your account`,
+        emailText: `Dear ${firstName},\n\nYou have been ${context.daysBehind} day(s) behind on your daily saving, and under the association's rules a fine of ${context.fineRate}% of the unpaid saving now applies.\n\nFine: ${formatMoney(context.amount)}\nReference: ${context.reference}\n\nTo clear your arrears and this fine together, pay ${formatMoney(context.clearingAmount)} quoting ${context.paymentReference}.\n\nYou can read the rule this was applied under, and your full standing, on the rules page of your dashboard. If you believe this is wrong, or you need a payment break, contact the association - a fine can be waived by an officer with a reason recorded.\n\n${associationName}`,
+        severity: "WARNING",
+        actionUrl: "/dashboard/rules",
+      };
+
+    // Deliberately sent. Being told you are clear is what makes the warnings
+    // above trustworthy rather than a system that only ever complains.
+    case NOTIFICATION_EVENTS.CONTRIBUTION_BACK_ON_TRACK:
+      return {
+        title: "You are up to date",
+        body: `Your daily saving is fully up to date. Your savings balance is ${formatMoney(context.balance)}.`,
+        emailSubject: "Your saving is up to date",
+        emailText: `Dear ${firstName},\n\nYour daily saving is fully up to date - nothing is outstanding and no fine applies.\n\nYour savings balance is ${formatMoney(context.balance)}.\n\nThank you.\n\n${associationName}`,
+        severity: "SUCCESS",
+        actionUrl: "/dashboard/savings",
+      };
+
+    // The member's own half of the loan interest, landing back in their
+    // savings. Worth telling them about: it is the rule most likely to be
+    // disbelieved until it is seen on a statement.
+    case NOTIFICATION_EVENTS.INTEREST_SHARE_CREDITED:
+      return {
+        title: "Your share of the loan interest",
+        body: `${formatMoney(context.amount)} of the interest on your repayment has been credited back into your savings. Your balance is now ${formatMoney(context.balance)}.`,
+        emailSubject: `${formatMoney(context.amount)} of interest credited to your savings`,
+        emailText: `Dear ${firstName},\n\nUnder the association's interest-sharing rule, half the interest you pay on a loan comes back to you.\n\nCredited to your savings: ${formatMoney(context.amount)}\nLoan reference: ${context.reference}\nYour savings balance is now ${formatMoney(context.balance)}.\n\n${associationName}`,
+        severity: "SUCCESS",
+        actionUrl: "/dashboard/savings/transactions",
+      };
+
+    case NOTIFICATION_EVENTS.RULE_CHANGED:
+      return {
+        title: "A rule has changed",
+        body: `${context.ruleTitle} has been amended. ${context.reason ?? ""}`.trim(),
+        emailSubject: `${associationName}: a rule has changed`,
+        emailText: `Dear ${firstName},\n\nThe association has amended one of its rules.\n\nRule: ${context.ruleTitle}\nReason given: ${context.reason ?? "Not stated"}\n\nYou can read the rule in full, and its history, on the rules page of your dashboard.\n\n${associationName}`,
+        severity: "INFO",
+        actionUrl: "/dashboard/rules",
       };
 
     case NOTIFICATION_EVENTS.WITHDRAWAL_SUBMITTED:

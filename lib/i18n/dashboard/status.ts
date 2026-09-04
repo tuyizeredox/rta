@@ -100,6 +100,35 @@ export interface StatusCopy {
   PARTIAL: string;
   SKIPPED: string;
 
+  // Investments
+  PLANNED: string;
+  PAUSED: string;
+
+  // Investment categories — what the association put money into
+  EQUIPMENT: string;
+  WORKSHOP_SPACE: string;
+  BULK_MATERIALS: string;
+  TRAINING: string;
+  MARKET_ACCESS: string;
+  PROPERTY: string;
+  MEMBER_LENDING: string;
+  EMERGENCY_FUND: string;
+
+  // Funding sources — whose money paid for it
+  MEMBER_SAVINGS: string;
+  BANK_LOAN: string;
+  RETAINED_SURPLUS: string;
+  GRANT: string;
+  MIXED: string;
+
+  // Lenders — who lent the association money
+  BANK: string;
+  MICROFINANCE: string;
+  SACCO: string;
+  GOVERNMENT_PROGRAMME: string;
+  NGO: string;
+  COOPERATIVE_UNION: string;
+
   // Roles
   MEMBER: string;
   ADMIN: string;
@@ -177,6 +206,31 @@ export const status: Record<Locale, StatusCopy> = {
     PARTIAL: "Partial",
     SKIPPED: "Skipped",
 
+    PLANNED: "Planned",
+    PAUSED: "Paused",
+
+    EQUIPMENT: "Equipment",
+    WORKSHOP_SPACE: "Workshop space",
+    BULK_MATERIALS: "Bulk materials",
+    TRAINING: "Training",
+    MARKET_ACCESS: "Market access",
+    PROPERTY: "Property",
+    MEMBER_LENDING: "Lending to members",
+    EMERGENCY_FUND: "Emergency fund",
+
+    MEMBER_SAVINGS: "Members' savings",
+    BANK_LOAN: "Bank loan",
+    RETAINED_SURPLUS: "Retained surplus",
+    GRANT: "Grant",
+    MIXED: "Mixed sources",
+
+    BANK: "Bank",
+    MICROFINANCE: "Microfinance institution",
+    SACCO: "SACCO",
+    GOVERNMENT_PROGRAMME: "Government programme",
+    NGO: "NGO",
+    COOPERATIVE_UNION: "Cooperative union",
+
     MEMBER: "Member",
     ADMIN: "Admin",
     SUPER_ADMIN: "Super admin",
@@ -251,6 +305,31 @@ export const status: Record<Locale, StatusCopy> = {
     SUCCESS: "Byagenze neza",
     PARTIAL: "Byagenze igice",
     SKIPPED: "Byasimbutswe",
+
+    PLANNED: "Byateganyijwe",
+    PAUSED: "Byahagaritswe by'agateganyo",
+
+    EQUIPMENT: "Ibikoresho",
+    WORKSHOP_SPACE: "Ahakorerwa",
+    BULK_MATERIALS: "Ibikoresho byaguzwe ari byinshi",
+    TRAINING: "Amahugurwa",
+    MARKET_ACCESS: "Kubona isoko",
+    PROPERTY: "Umutungo utimukanwa",
+    MEMBER_LENDING: "Guha inguzanyo abanyamuryango",
+    EMERGENCY_FUND: "Ingoboka",
+
+    MEMBER_SAVINGS: "Ubuzigame bw'abanyamuryango",
+    BANK_LOAN: "Inguzanyo ya banki",
+    RETAINED_SURPLUS: "Inyungu yabitswe",
+    GRANT: "Inkunga",
+    MIXED: "Inkomoko zivanze",
+
+    BANK: "Banki",
+    MICROFINANCE: "Ikigo cy'imari iciriritse",
+    SACCO: "SACCO",
+    GOVERNMENT_PROGRAMME: "Gahunda ya Leta",
+    NGO: "Umuryango utari uwa Leta",
+    COOPERATIVE_UNION: "Ihuriro ry'amakoperative",
 
     MEMBER: "Umunyamuryango",
     ADMIN: "Umuyobozi",

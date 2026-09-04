@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma, withFinancialTransaction } from "@/lib/db/prisma";
+import { Prisma, prisma, withFinancialTransaction } from "@/lib/db/prisma";
 import { loanLogger } from "@/lib/logger";
 import { recordAudit, AUDIT_ACTIONS } from "@/lib/audit";
 import { add, gt, isPositive, lte, min, subtract, toMoney, toMoneyString } from "@/lib/money";
@@ -8,6 +8,11 @@ import {
   postSavingsTransaction,
 } from "@/lib/services/ledger";
 import { checkEligibility, generateSchedule } from "@/lib/services/loan-calculator";
+import { distributeInterest } from "@/lib/services/interest-sharing";
+import { assessBorrowing, wholeMonthsBetween } from "@/lib/rules/borrowing";
+import { getMemberStanding } from "@/lib/services/contributions";
+import { getPolicy, getPolicyWithin } from "@/lib/services/rulebook";
+import { notify, NOTIFICATION_EVENTS } from "@/lib/notifications";
 import type { LoanApplicationStatus, RepaymentFrequency } from "@/lib/generated/prisma/enums";
 
 /**
@@ -25,6 +30,21 @@ import type { LoanApplicationStatus, RepaymentFrequency } from "@/lib/generated/
  * first would reduce future interest and flatter the member, while charging
  * penalties first is the convention associations actually operate.
  */
+
+/**
+ * Serialises a report into the exact shape the Json column will hold.
+ *
+ * Not merely a cast. The eligibility snapshot is assembled from interfaces,
+ * and TypeScript will not accept an interface where Prisma wants
+ * `InputJsonValue` — an interface has no implicit index signature, so the
+ * compiler cannot prove every property is serialisable. Round-tripping through
+ * JSON both satisfies that and does what the database is about to do anyway:
+ * drops `undefined`, renders dates as ISO strings, and guarantees what was
+ * type-checked is what is stored.
+ */
+function asJson<T>(value: T): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
+}
 
 export class LoanError extends Error {
   constructor(
@@ -54,6 +74,12 @@ export interface SubmitApplicationInput {
   termMonths: number;
   frequency: RepaymentFrequency;
   guarantors?: { fullName: string; phone?: string; nationalId?: string; memberId?: string }[];
+  /// What the member has pledged, when the amount exceeds the share they may
+  /// take against their own savings. Free text plus a value the committee will
+  /// verify — the rule says "materials or anything", so the field cannot be a
+  /// closed list of asset types.
+  collateralDescription?: string | null;
+  collateralValue?: string | null;
 }
 
 export async function submitLoanApplication(
@@ -67,11 +93,13 @@ export async function submitLoanApplication(
       status: true,
       joinedAt: true,
       createdAt: true,
+      approvedAt: true,
       savingsAccounts: { where: { isActive: true }, take: 1, select: { balance: true } },
       loans: {
         where: { status: { in: ["PENDING_DISBURSEMENT", "DISBURSED", "ACTIVE", "OVERDUE"] } },
         select: { id: true },
       },
+      association: { select: { createdAt: true } },
     },
   });
 
@@ -120,6 +148,32 @@ export async function submitLoanApplication(
     return { ok: false, failures: eligibility.failures };
   }
 
+  // THE ASSOCIATION'S OWN RULES, on top of the product's.
+  //
+  // Checked here and not only in the form, because the form is a convenience
+  // and this is the decision. A member who is behind on their daily saving, or
+  // who is asking for more than their savings share without pledging anything,
+  // is refused with the sentence that says what would change it.
+  const policy = await getPolicy(member.associationId);
+  const standing = await getMemberStanding(member.id);
+
+  const ruleCheck = assessBorrowing({
+    policy,
+    savingsBalance: toMoneyString(savingsBalance),
+    membershipMonths: wholeMonthsBetween(since, new Date()),
+    associationMonths: wholeMonthsBetween(member.association.createdAt, new Date()),
+    missedDays: standing?.missedDays ?? 0,
+    outstandingFines: standing?.outstandingFineAmount ?? "0.00",
+    hasActiveLoan: member.loans.length > 0,
+    requestedAmount: input.requestedAmount,
+    collateralValue: input.collateralValue ?? null,
+    termMonths: input.termMonths,
+  });
+
+  if (ruleCheck.blockers.length > 0) {
+    return { ok: false, failures: ruleCheck.blockers };
+  }
+
   const reference = buildTransactionReference("APP");
 
   const application = await prisma.loanApplication.create({
@@ -138,7 +192,21 @@ export async function submitLoanApplication(
       savingsAtApplication: toMoneyString(savingsBalance),
       maxEligibleAmount: eligibility.maxEligibleAmount,
       eligibilityPassed: true,
-      eligibilityReport: { ...eligibility, membershipMonths },
+      // Both assessments are snapshotted. The association's rules change more
+      // often than a loan product does, and an approval questioned next year
+      // has to be judgeable against the rulebook that was in force on the day.
+      eligibilityReport: asJson({
+        ...eligibility,
+        membershipMonths,
+        ruleCheck,
+        policyAtApplication: policy,
+        collateral: input.collateralDescription
+          ? {
+              description: input.collateralDescription,
+              value: input.collateralValue ?? null,
+            }
+          : null,
+      }),
       submittedAt: new Date(),
       statusHistory: {
         create: { toStatus: "SUBMITTED", note: "Submitted by member" },
@@ -567,6 +635,14 @@ export interface RepaymentResult {
   totalOutstanding: string;
   loanCompleted: boolean;
   instalmentsSettled: number;
+  /// How the interest in this repayment was divided under the interest-sharing
+  /// rule. Null when the repayment cleared no interest — an early payment that
+  /// went entirely to principal, or an association that shares nothing.
+  interestShared: {
+    memberShare: string;
+    associationShare: string;
+    balanceAfter: string | null;
+  } | null;
 }
 
 /**
@@ -576,6 +652,12 @@ export interface RepaymentResult {
  * first. Stated explicitly because it is a policy decision, not a technical
  * one: it determines how much interest a member ultimately pays, and any two
  * systems that disagree about it will disagree about the balance.
+ *
+ * INTEREST IS SPLIT AS IT IS COLLECTED. Under the association's rules half of
+ * every point of interest goes back into the borrower's own savings, so a
+ * repayment does not merely reduce a debt — it also credits an account. Both
+ * happen inside this one transaction; see lib/services/interest-sharing.ts for
+ * why that is not negotiable.
  */
 export async function recordLoanRepayment(params: {
   loanId: string;
@@ -593,12 +675,14 @@ export async function recordLoanRepayment(params: {
     throw new LoanError("A repayment must be greater than zero", "INVALID_STATE");
   }
 
-  return withFinancialTransaction(async (tx) => {
+  const result = await withFinancialTransaction(async (tx) => {
     const loan = await tx.loan.findUniqueOrThrow({
       where: { id: params.loanId },
       include: {
         member: {
           select: {
+            id: true,
+            userId: true,
             savingsAccounts: { where: { isActive: true }, take: 1, select: { id: true } },
           },
         },
@@ -781,6 +865,28 @@ export async function recordLoanRepayment(params: {
       );
     }
 
+    // The borrower's own half of the interest, credited back to their savings.
+    //
+    // AFTER the repayment debit above, deliberately: when a member repays from
+    // savings, their statement should read as the money leaving and their
+    // share returning, in that order. Reversing it would briefly credit
+    // interest against a debt not yet paid, which reads as an error to anyone
+    // reconciling the account by eye.
+    const interestShared = isPositive(interestPaid)
+      ? await distributeInterest(tx, {
+          policy: await getPolicyWithin(tx, loan.associationId),
+          associationId: loan.associationId,
+          loanId: loan.id,
+          memberId: loan.member.id,
+          loanTransactionId: loanTransaction.id,
+          savingsAccountId: loan.member.savingsAccounts[0]?.id ?? null,
+          interestCollected: toMoneyString(interestPaid),
+          loanReference: loan.reference,
+          currency: loan.currency,
+          actorId: params.actorId ?? null,
+        })
+      : null;
+
     await recordAudit(
       {
         action: AUDIT_ACTIONS.LOAN_REPAYMENT_POSTED,
@@ -813,8 +919,33 @@ export async function recordLoanRepayment(params: {
       totalOutstanding: toMoneyString(newOutstanding),
       loanCompleted: completed,
       instalmentsSettled,
+      interestShared,
+      borrowerUserId: loan.member.userId,
     };
   });
+
+  // Told after the money has moved, never before. `notify` swallows its own
+  // failures, so a messaging outage cannot roll back a posted repayment.
+  if (result.interestShared && gt(result.interestShared.memberShare, 0)) {
+    await notify({
+      userId: result.borrowerUserId,
+      event: NOTIFICATION_EVENTS.INTEREST_SHARE_CREDITED,
+      context: {
+        amount: result.interestShared.memberShare,
+        balance: result.interestShared.balanceAfter ?? undefined,
+        reference: result.reference,
+      },
+      entityType: "Loan",
+      entityId: params.loanId,
+    });
+  }
+
+  // The borrower's user id is carried out of the transaction only so the
+  // notification above can be sent after it commits. It is not part of the
+  // repayment result every caller sees.
+  const { borrowerUserId, ...repayment } = result;
+  void borrowerUserId;
+  return repayment;
 }
 
 /**

@@ -254,6 +254,67 @@ enum GuarantorStatus {
   RELEASED
 }
 
+/// Lifecycle of money the ASSOCIATION borrowed from a bank or microfinance
+/// institution. Deliberately separate from LoanStatus: that one tracks money
+/// the association lent OUT to a member, this one tracks money it owes. The
+/// two move in opposite directions on the balance sheet and conflating them
+/// is how an association reports a liability as an asset.
+enum InstitutionalLoanStatus {
+  PENDING_DISBURSEMENT
+  ACTIVE
+  OVERDUE
+  COMPLETED
+  DEFAULTED
+  CANCELLED
+  WRITTEN_OFF
+}
+
+/// Who lent the association the money. Recorded because members ask it by
+/// name — "which bank?" is the first question at every general meeting.
+enum LenderType {
+  BANK
+  MICROFINANCE
+  SACCO
+  GOVERNMENT_PROGRAMME
+  NGO
+  COOPERATIVE_UNION
+  OTHER
+}
+
+/// What the association put money into. A category rather than free text so
+/// the member-facing page can group and total it; the specifics live in the
+/// record's own title and narrative.
+enum InvestmentCategory {
+  EQUIPMENT
+  WORKSHOP_SPACE
+  BULK_MATERIALS
+  TRAINING
+  MARKET_ACCESS
+  PROPERTY
+  MEMBER_LENDING
+  EMERGENCY_FUND
+  OTHER
+}
+
+/// Where the money for an investment came from. Members are entitled to know
+/// whether their savings or a bank facility paid for something, because the
+/// two carry different risk to them.
+enum FundingSource {
+  MEMBER_SAVINGS
+  BANK_LOAN
+  RETAINED_SURPLUS
+  GRANT
+  MIXED
+}
+
+enum InvestmentStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  PAUSED
+  CANCELLED
+}
+
 enum NotificationChannel {
   IN_APP
   EMAIL
@@ -391,6 +452,19 @@ model Association {
   settings         SystemSetting[]
   savingsRule      SavingsRule?
 
+  /// The association's own side of the balance sheet: what it borrowed and
+  /// what it put the money into. See the ASSOCIATION FINANCES section.
+  borrowings  InstitutionalLoan[]
+  investments AssociationInvestment[]
+
+  /// The rules the association runs on, and the records they produce. See the
+  /// RULEBOOK section at the foot of this file.
+  rules                 AssociationRule[]
+  contributionFines     ContributionFine[]
+  contributionStandings MemberContributionStanding[]
+  platformFeeCharges    PlatformFeeCharge[]
+  interestDistributions InterestDistribution[]
+
   @@index([status])
   @@map("associations")
 }
@@ -419,7 +493,7 @@ model User {
   /// to do, this is what the membership card prints under their name. Null
   /// falls back to the role label, so an ordinary member's card still reads
   /// sensibly without anyone filling this in.
-  title     String?
+  title String?
 
   /// Argon2id hash. Never a plaintext or reversible value.
   passwordHash       String
@@ -474,6 +548,17 @@ model User {
   matchedPayments      Payment[]               @relation("PaymentMatchedBy")
   memberNotes          MemberNote[]            @relation("MemberNoteAuthor")
   settingUpdates       SystemSetting[]         @relation("SettingUpdatedBy")
+
+  recordedBorrowings  InstitutionalLoan[]          @relation("BorrowingRecordedBy")
+  recordedRepayments  InstitutionalLoanRepayment[] @relation("BorrowingRepaymentRecordedBy")
+  recordedInvestments AssociationInvestment[]      @relation("InvestmentRecordedBy")
+
+  createdRules        AssociationRule[]         @relation("RuleCreatedBy")
+  updatedRules        AssociationRule[]         @relation("RuleUpdatedBy")
+  ruleRevisions       AssociationRuleRevision[] @relation("RuleRevisionChangedBy")
+  assessedFines       ContributionFine[]        @relation("FineAssessedBy")
+  waivedFines         ContributionFine[]        @relation("FineWaivedBy")
+  chargedPlatformFees PlatformFeeCharge[]       @relation("PlatformFeeChargedBy")
 
   @@unique([email])
   @@unique([phone])
@@ -569,14 +654,14 @@ model UserAvatar {
   userId String @id
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  data     Bytes
-  mimeType String
+  data      Bytes
+  mimeType  String
   /// Bytes, kept alongside so a size check never has to load the image.
   sizeBytes Int
   /// Longest edge in pixels, recorded at upload so the card renderer can tell
   /// a usable photograph from one too small to print at 300dpi.
-  width  Int
-  height Int
+  width     Int
+  height    Int
 
   uploadedAt DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -733,6 +818,11 @@ model Member {
   notes            MemberNote[]
   guarantorFor     Guarantor[]
 
+  contributionFines     ContributionFine[]
+  contributionStanding  MemberContributionStanding?
+  platformFeeCharges    PlatformFeeCharge[]
+  interestDistributions InterestDistribution[]
+
   @@unique([associationId, memberNumber])
   @@index([associationId, status])
   @@index([associationId, kycStatus])
@@ -870,6 +960,15 @@ model SavingsTransaction {
 
   valueDate DateTime @default(now())
   createdAt DateTime @default(now())
+
+  /// Back-references from the rulebook records that caused this row. All three
+  /// are optional and mutually exclusive; they exist so a service can ask "was
+  /// this fee the platform's, or the association's?" of the ledger row itself.
+  /// Without them the association's income reports would count the platform's
+  /// service fee as association income.
+  platformFeeCharge    PlatformFeeCharge?
+  contributionFine     ContributionFine?
+  interestDistribution InterestDistribution?
 
   @@unique([savingsAccountId, sequence])
   @@index([associationId, createdAt])
@@ -1322,11 +1421,12 @@ model Loan {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  installments        LoanInstallment[]
-  transactions        LoanTransaction[]
-  savingsTransactions SavingsTransaction[]
-  guarantors          Guarantor[]
-  documents           Document[]
+  installments          LoanInstallment[]
+  transactions          LoanTransaction[]
+  savingsTransactions   SavingsTransaction[]
+  guarantors            Guarantor[]
+  documents             Document[]
+  interestDistributions InterestDistribution[]
 
   @@index([associationId, status])
   @@index([memberId, status])
@@ -1419,8 +1519,11 @@ model LoanTransaction {
   valueDate DateTime @default(now())
   createdAt DateTime @default(now())
 
-  allocations         LoanRepaymentAllocation[]
-  savingsTransactions SavingsTransaction[]
+  allocations          LoanRepaymentAllocation[]
+  savingsTransactions  SavingsTransaction[]
+  /// How this repayment's interest was split between the borrower's savings
+  /// and the association. Only REPAYMENT rows carrying interest have one.
+  interestDistribution InterestDistribution?
 
   @@unique([loanId, sequence])
   @@index([associationId, createdAt])
@@ -1481,6 +1584,197 @@ model Guarantor {
   @@index([loanId])
   @@index([guarantorMemberId, status])
   @@map("guarantors")
+}
+
+// ============================================================================
+// ASSOCIATION FINANCES — BORROWING & INVESTMENT
+// ============================================================================
+//
+// The models above answer "what does this member have?". These two answer
+// "what does the association have, and what did it do with it?" — the question
+// members actually ask at a general meeting and which, until now, only the
+// treasurer's notebook could answer.
+//
+// Both are read by an ordinary member, not just by staff. That is the point of
+// them: an association that borrows against its members' savings owes those
+// members a plain account of the debt and of what it bought.
+
+/// Money the ASSOCIATION borrowed — typically a bank facility taken against
+/// the members' pooled savings so the association can lend or invest beyond
+/// what it holds.
+///
+/// A LIABILITY, not a Loan. `Loan` requires a memberId and reduces as a member
+/// repays the association; this reduces as the association repays a bank. They
+/// share no rows and must never be summed together.
+model InstitutionalLoan {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Restrict)
+
+  /// Member-facing identifier, e.g. "BRW-2026-0001".
+  reference String                  @unique
+  status    InstitutionalLoanStatus @default(PENDING_DISBURSEMENT)
+
+  lenderName      String
+  lenderType      LenderType @default(BANK)
+  lenderReference String?
+  lenderContact   String?
+
+  /// Why the association took this on, in words a member can read. Shown
+  /// verbatim on the member-facing page — this is the honesty the model
+  /// exists for, so it is required rather than optional.
+  purpose String
+
+  principal      Decimal        @db.Decimal(18, 2)
+  interestRate   Decimal        @db.Decimal(9, 4)
+  interestMethod InterestMethod @default(REDUCING_BALANCE)
+  interestPeriod String         @default("ANNUAL")
+  termMonths     Int
+  currency       String         @default("RWF")
+
+  /// Total cost as contracted, so a member can see the whole obligation
+  /// rather than only the principal.
+  totalInterest Decimal @default(0) @db.Decimal(18, 2)
+  totalFees     Decimal @default(0) @db.Decimal(18, 2)
+  totalPayable  Decimal @default(0) @db.Decimal(18, 2)
+
+  /// Live position. Maintained alongside the repayment ledger inside the same
+  /// transaction, under the same discipline as SavingsAccount.balance: a
+  /// cache that must always equal the replayed history.
+  principalOutstanding Decimal @default(0) @db.Decimal(18, 2)
+  interestOutstanding  Decimal @default(0) @db.Decimal(18, 2)
+
+  principalRepaid Decimal @default(0) @db.Decimal(18, 2)
+  interestPaid    Decimal @default(0) @db.Decimal(18, 2)
+  feesPaid        Decimal @default(0) @db.Decimal(18, 2)
+  totalRepaid     Decimal @default(0) @db.Decimal(18, 2)
+
+  /// Monotonic counter for the repayment ledger below.
+  lastSequence Int @default(0)
+
+  /// Security pledged. Usually the members' own savings, which is precisely
+  /// why members must be able to read this row.
+  collateralDescription String?
+  collateralAmount      Decimal? @db.Decimal(18, 2)
+
+  disbursedAt     DateTime?
+  firstPaymentDue DateTime?
+  nextPaymentDue  DateTime?
+  maturityDate    DateTime?
+  completedAt     DateTime?
+
+  daysOverdue   Int     @default(0)
+  overdueAmount Decimal @default(0) @db.Decimal(18, 2)
+
+  /// Withheld from the member-facing page while false. The default is true:
+  /// a facility secured on members' savings is theirs to know about, and
+  /// hiding one has to be a deliberate act with a reason recorded in the
+  /// audit log, not the effect of forgetting a checkbox.
+  isPublic Boolean @default(true)
+
+  recordedById String?
+  recordedBy   User?   @relation("BorrowingRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  repayments  InstitutionalLoanRepayment[]
+  investments AssociationInvestment[]
+
+  @@index([associationId, status])
+  @@index([associationId, isPublic])
+  @@index([nextPaymentDue])
+  @@map("institutional_loans")
+}
+
+/// THE BORROWING LEDGER. Append-only, same discipline as LoanTransaction:
+/// rows are never edited, and the loan's outstanding position is only ever
+/// written in the transaction that appends one.
+model InstitutionalLoanRepayment {
+  id                  String            @id @default(cuid())
+  institutionalLoanId String
+  institutionalLoan   InstitutionalLoan @relation(fields: [institutionalLoanId], references: [id], onDelete: Restrict)
+
+  sequence  Int
+  reference String @unique
+
+  amount           Decimal @db.Decimal(18, 2)
+  principalPortion Decimal @default(0) @db.Decimal(18, 2)
+  interestPortion  Decimal @default(0) @db.Decimal(18, 2)
+  feesPortion      Decimal @default(0) @db.Decimal(18, 2)
+
+  /// Total still owed across principal and interest after this row.
+  balanceAfter Decimal        @db.Decimal(18, 2)
+  currency     String         @default("RWF")
+  channel      PaymentChannel @default(BANK_TRANSFER)
+
+  description       String?
+  externalReference String?
+
+  paidAt       DateTime @default(now())
+  recordedById String?
+  recordedBy   User?    @relation("BorrowingRepaymentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@unique([institutionalLoanId, sequence])
+  @@index([institutionalLoanId, paidAt])
+  @@map("institutional_loan_repayments")
+}
+
+/// What the association did with the money — the answer to "what did our
+/// savings actually buy us?".
+///
+/// `benefitSummary` is not decoration. A member reading that the association
+/// spent 4,000,000 on equipment learns nothing; reading that it bought two
+/// industrial machines now used by thirty tailors is the whole point of
+/// showing them the figure at all.
+model AssociationInvestment {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Restrict)
+
+  reference String             @unique
+  title     String
+  category  InvestmentCategory @default(OTHER)
+  status    InvestmentStatus   @default(PLANNED)
+
+  /// One or two sentences for the card; the long form for the detail view.
+  summary     String
+  description String?
+
+  /// What members get out of it, in their own terms.
+  benefitSummary   String?
+  membersBenefited Int?
+
+  fundingSource  FundingSource      @default(MEMBER_SAVINGS)
+  /// Set when a bank facility paid for this, so a member can follow the money
+  /// from the debt the association took on to the thing it bought.
+  fundedByLoanId String?
+  fundedByLoan   InstitutionalLoan? @relation(fields: [fundedByLoanId], references: [id], onDelete: SetNull)
+
+  amountInvested Decimal @db.Decimal(18, 2)
+  /// Money this has handed back so far — rent, sales, savings on bulk buying.
+  /// Realised only: a projection belongs in `description`, not in a column
+  /// that feeds the surplus a member is shown.
+  amountReturned Decimal @default(0) @db.Decimal(18, 2)
+  currency       String  @default("RWF")
+
+  startedAt   DateTime?
+  completedAt DateTime?
+
+  /// Same reasoning as InstitutionalLoan.isPublic.
+  isPublic Boolean @default(true)
+
+  recordedById String?
+  recordedBy   User?   @relation("InvestmentRecordedBy", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([associationId, status])
+  @@index([associationId, isPublic])
+  @@index([fundedByLoanId])
+  @@map("association_investments")
 }
 
 // ============================================================================
@@ -1704,4 +1998,391 @@ model JobRun {
   @@index([jobName, startedAt])
   @@index([status])
   @@map("job_runs")
+}
+
+// ============================================================================
+// THE RULEBOOK — WRITTEN POLICY THE SOFTWARE ACTUALLY ENFORCES
+// ----------------------------------------------------------------------------
+// A savings association runs on rules its members agreed to: save this much
+// every day, this is the service fee, miss this many days and you are fined,
+// borrow no more than this against your own savings, repay over this many
+// months at this rate. Until now those rules lived in a constitution document,
+// a WhatsApp group and the treasurer's memory, while the software enforced
+// constants buried in code that no member could read and no committee could
+// change.
+//
+// These tables close that gap. ONE ROW PER RULE, holding both the human
+// sentence a member reads and the machine value the services apply, so there
+// is exactly one place a rule can be changed and no way for the printed policy
+// and the enforced policy to drift apart.
+//
+// THREE PROPERTIES THIS SECTION IS BUILT FOR:
+//
+//  1. LEGIBLE. Every rule carries its own explanation in both languages. A
+//     member opening the rules page reads sentences, not a settings table.
+//
+//  2. AMENDABLE, WITH A RECORD. Rules change when a general meeting resolves
+//     to change them. Each edit writes an AssociationRuleRevision, so "who
+//     raised the fine to 10%, when, and why" is answerable years later.
+//
+//  3. SEPARATED. The platform's service fee, the members' savings, the
+//     association's share of loan interest and the members' share of it are
+//     four different pots of money with four different owners. They get their
+//     own tables rather than one column with a `type` on it, because the
+//     failure being designed out is an association spending a fee it was only
+//     ever collecting on somebody else's behalf.
+// ============================================================================
+
+/// What area of association life a rule governs. Drives the grouping on both
+/// the admin rulebook and the member-facing rules page.
+enum RuleCategory {
+  CONTRIBUTIONS
+  PLATFORM_FEE
+  PENALTIES
+  LENDING_ELIGIBILITY
+  LOAN_TERMS
+  INTEREST_SHARING
+  GOVERNANCE
+  OTHER
+}
+
+/// How a rule's value should be read and edited. MONEY and PERCENT are stored
+/// as exact decimal strings for the same reason every other amount is; DAYS,
+/// MONTHS and COUNT are integers; TEXT rules carry no value at all and are
+/// pure written policy.
+enum RuleValueType {
+  MONEY
+  PERCENT
+  DAYS
+  MONTHS
+  COUNT
+  BOOLEAN
+  TEXT
+}
+
+/// Whether the software applies a rule by itself, proposes it for a person to
+/// confirm, or merely publishes it.
+///
+/// Displayed on every rule, because a member is entitled to know which rules
+/// the system acts on without anyone deciding — a fine that appears overnight
+/// is a different thing from one an officer chose to raise.
+enum RuleEnforcement {
+  /// The system applies it: fees charged, fines assessed, limits refused.
+  AUTOMATIC
+  /// The system detects the condition and asks a person to act.
+  ASSISTED
+  /// Written policy. Nothing in the code reads it.
+  INFORMATIONAL
+}
+
+/// ONE RULE. System rules are seeded from lib/rules/catalogue.ts and are keyed
+/// so services can look them up; custom rules are written by a committee and
+/// carry text only.
+///
+/// `value` is a string for every type, including money and percentages, for
+/// the reason set out at the top of lib/money.ts: a numeric column read back
+/// through a JavaScript float is a rounding error waiting to reach a balance.
+/// Services parse it with `toMoney` at the point of use.
+model AssociationRule {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+
+  /// Stable lookup key, e.g. "contribution.daily_savings". System rules use a
+  /// key from the catalogue; custom rules get "custom.<slug>". Unique per
+  /// association, so a service asking for a rule can never get two answers.
+  key String
+
+  category    RuleCategory
+  valueType   RuleValueType
+  enforcement RuleEnforcement @default(INFORMATIONAL)
+
+  /// Null for TEXT rules, which are policy prose with nothing to compute.
+  value String?
+
+  /// True for rules the code reads. They can be retuned and reworded but never
+  /// deleted — removing one would leave a service with no policy to apply.
+  isSystem Boolean @default(false)
+
+  /// A deactivated rule stops being enforced and is shown struck through
+  /// rather than vanishing, so a member fined under it can still find the rule
+  /// they were fined under.
+  isActive Boolean @default(true)
+
+  displayOrder Int @default(0)
+
+  /// The rule as members read it, in both languages. Held here rather than in
+  /// the dictionary because a committee must be able to reword its own policy
+  /// without a deployment.
+  titleEn String
+  titleRw String
+  bodyEn  String @db.Text
+  bodyRw  String @db.Text
+
+  /// When this version of the rule began to apply. A fine is judged against
+  /// the rule in force on the day it was assessed, not today's wording.
+  effectiveFrom DateTime @default(now())
+  version       Int      @default(1)
+
+  createdById String?
+  createdBy   User?   @relation("RuleCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?   @relation("RuleUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  revisions AssociationRuleRevision[]
+
+  @@unique([associationId, key])
+  @@index([associationId, category, displayOrder])
+  @@index([associationId, isActive])
+  @@map("association_rules")
+}
+
+/// The prior wording and value of a rule, written on every amendment.
+/// Append-only: this is the evidence that the policy a member was held to is
+/// the policy that was in force at the time.
+model AssociationRuleRevision {
+  id     String          @id @default(cuid())
+  ruleId String
+  rule   AssociationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  version  Int
+  value    String?
+  titleEn  String
+  titleRw  String
+  bodyEn   String  @db.Text
+  bodyRw   String  @db.Text
+  isActive Boolean @default(true)
+
+  /// Null when the platform seeded it rather than a person editing it.
+  changedById  String?
+  changedBy    User?   @relation("RuleRevisionChangedBy", fields: [changedById], references: [id], onDelete: SetNull)
+  changeReason String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([ruleId, version])
+  @@index([ruleId, createdAt])
+  @@map("association_rule_revisions")
+}
+
+// ---------------------------------------------------------------------------
+// CONTRIBUTION DISCIPLINE
+// ---------------------------------------------------------------------------
+
+enum ContributionFineStatus {
+  /// Assessed and owed. Visible to the member from the moment it exists.
+  OUTSTANDING
+  /// Taken out of the member's savings, or paid separately.
+  SETTLED
+  WAIVED
+  /// Assessed in error and withdrawn. Kept, never deleted.
+  CANCELLED
+}
+
+/// A penalty for falling behind on the daily contribution.
+///
+/// IDENTIFIED BY `dueDayIndex` — the member's obligation day on which the fine
+/// was triggered — rather than by a date. The job that assesses fines runs
+/// every night and must be able to run twice without fining twice, and a
+/// member who pays part of what they owe must not have the same arrears fined
+/// again. Both fall out of a unique constraint on (memberId, dueDayIndex).
+model ContributionFine {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Restrict)
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  reference String @unique
+
+  /// How far behind the member was when this was assessed, and which
+  /// obligation day that was. Both are recorded so the member can be shown the
+  /// arithmetic rather than a bare figure.
+  missedDays  Int
+  dueDayIndex Int
+
+  /// The unpaid contribution the percentage was applied to, and the rate in
+  /// force on the day. Stored rather than recomputed: the rule may change, and
+  /// a fine must remain explainable under the rule that produced it.
+  arrearsAmount Decimal @db.Decimal(18, 2)
+  rate          Decimal @db.Decimal(9, 4)
+  amount        Decimal @db.Decimal(18, 2)
+  currency      String  @default("RWF")
+
+  status ContributionFineStatus @default(OUTSTANDING)
+
+  assessedAt   DateTime @default(now())
+  /// Null when the nightly job assessed it, set when an officer did.
+  assessedById String?
+  assessedBy   User?    @relation("FineAssessedBy", fields: [assessedById], references: [id], onDelete: SetNull)
+
+  settledAt            DateTime?
+  /// The PENALTY debit that took it out of savings, when that is how it was
+  /// settled. Unique: one fine can never be collected twice.
+  savingsTransactionId String?             @unique
+  savingsTransaction   SavingsTransaction? @relation(fields: [savingsTransactionId], references: [id], onDelete: SetNull)
+
+  waivedAt     DateTime?
+  waivedById   String?
+  waivedBy     User?     @relation("FineWaivedBy", fields: [waivedById], references: [id], onDelete: SetNull)
+  waiverReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([memberId, dueDayIndex])
+  @@index([associationId, status, assessedAt])
+  @@index([memberId, assessedAt])
+  @@map("contribution_fines")
+}
+
+/// Per-member settings and reminder bookkeeping for the daily obligation.
+///
+/// DELIBERATELY HOLDS ALMOST NOTHING. Days owed, days covered and arrears are
+/// all derived from the savings ledger on every read — see rule 3 at the top
+/// of this schema. What cannot be derived lives here: when this member's
+/// obligation started, whether they are excused from it, and which reminder
+/// they were last sent, so the worker does not message the same person nightly.
+model MemberContributionStanding {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Cascade)
+  memberId      String      @unique
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  /// When the daily obligation began. Null falls back to the member's approval
+  /// date — but an association admitting an existing saver, or granting
+  /// someone a settling-in period, needs to be able to say otherwise.
+  obligationStartDate DateTime?
+
+  /// Excused from contributing — illness, maternity, an agreed break. No fees
+  /// and no fines accrue while it holds.
+  isExempt     Boolean   @default(false)
+  exemptReason String?
+  exemptUntil  DateTime?
+
+  /// Which warning the member last received, so escalation moves forward
+  /// rather than repeating. 0 = none outstanding.
+  lastReminderStage Int       @default(0)
+  lastReminderAt    DateTime?
+
+  lastEvaluatedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([associationId, isExempt])
+  @@map("member_contribution_standings")
+}
+
+// ---------------------------------------------------------------------------
+// THE SEPARATE POTS: the platform's fee, and the two halves of loan interest
+// ---------------------------------------------------------------------------
+
+enum PlatformFeeStatus {
+  CHARGED
+  WAIVED
+  REVERSED
+}
+
+/// THE PLATFORM'S SERVICE FEE — MONEY THAT IS NOT THE ASSOCIATION'S.
+///
+/// The daily contribution is 1,000 of savings plus 50 of service fee. Those 50
+/// belong to whoever operates this platform; the association merely collects
+/// them. Recording the fee in its own table, rather than as one more credit in
+/// the association's income, is what stops a committee distributing money it
+/// never owned — and what lets the admin screens show the two apart, which is
+/// the first thing a member will ask to see.
+///
+/// `coveredThroughDay` is the member's cumulative contribution-day count that
+/// this charge takes the fee up to. Unique per member, so the charging job is
+/// idempotent however often it runs.
+model PlatformFeeCharge {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Restrict)
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  reference String @unique
+
+  daysCovered       Int
+  coveredThroughDay Int
+  feePerDay         Decimal @db.Decimal(18, 2)
+  amount            Decimal @db.Decimal(18, 2)
+  currency          String  @default("RWF")
+
+  status PlatformFeeStatus @default(CHARGED)
+
+  /// The FEE debit on the member's savings ledger. Their statement then shows
+  /// the whole story: 1,050 in, 50 out as the service fee, 1,000 saved.
+  savingsTransactionId String?             @unique
+  savingsTransaction   SavingsTransaction? @relation(fields: [savingsTransactionId], references: [id], onDelete: SetNull)
+
+  chargedAt   DateTime @default(now())
+  chargedById String?
+  chargedBy   User?    @relation("PlatformFeeChargedBy", fields: [chargedById], references: [id], onDelete: SetNull)
+
+  /// When the association actually paid this over to the platform operator.
+  /// Null means collected but not yet remitted — a liability, and the figure
+  /// the admin funds screen shows as owed.
+  remittedAt DateTime?
+
+  waiverReason String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([memberId, coveredThroughDay])
+  @@index([associationId, chargedAt])
+  @@index([associationId, status, remittedAt])
+  @@index([memberId, chargedAt])
+  @@map("platform_fee_charges")
+}
+
+/// HOW ONE REPAYMENT'S INTEREST WAS DIVIDED.
+///
+/// The lending rule is 2% a month, of which half goes back into the borrower's
+/// own savings and half is kept by the association. That split is a promise to
+/// the member, so it gets a row of its own rather than being inferred later
+/// from two unrelated ledger entries: this is the record proving the member's
+/// half was actually credited, and it is what the admin funds screen adds up
+/// to show the association's true lending income.
+model InterestDistribution {
+  id            String      @id @default(cuid())
+  associationId String
+  association   Association @relation(fields: [associationId], references: [id], onDelete: Restrict)
+  loanId        String
+  loan          Loan        @relation(fields: [loanId], references: [id], onDelete: Restrict)
+  memberId      String
+  member        Member      @relation(fields: [memberId], references: [id], onDelete: Restrict)
+
+  /// The repayment whose interest this divides. Unique: a repayment is split
+  /// exactly once.
+  loanTransactionId String          @unique
+  loanTransaction   LoanTransaction @relation(fields: [loanTransactionId], references: [id], onDelete: Restrict)
+
+  interestCollected Decimal @db.Decimal(18, 2)
+  memberShare       Decimal @db.Decimal(18, 2)
+  associationShare  Decimal @db.Decimal(18, 2)
+  currency          String  @default("RWF")
+
+  /// The two halves of the monthly rate as they stood when this was posted, so
+  /// an old distribution stays explainable after the rule changes.
+  memberRate      Decimal @db.Decimal(9, 4)
+  associationRate Decimal @db.Decimal(9, 4)
+
+  /// The INTEREST credit on the borrower's savings. Null only when the member
+  /// share was zero, or their account was closed and an officer must post it.
+  savingsTransactionId String?             @unique
+  savingsTransaction   SavingsTransaction? @relation(fields: [savingsTransactionId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([associationId, createdAt])
+  @@index([memberId, createdAt])
+  @@index([loanId, createdAt])
+  @@map("interest_distributions")
 }

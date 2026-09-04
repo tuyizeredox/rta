@@ -6,6 +6,7 @@ import {
   ArrowUpFromLine,
   CalendarClock,
   HandCoins,
+  Landmark,
   PiggyBank,
   Receipt,
   TrendingUp,
@@ -185,7 +186,16 @@ export default async function MemberDashboardPage() {
           <h2 className="font-heading text-base font-semibold text-ink">
             {copy.quickActions}
           </h2>
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {/* First, deliberately. A member who never opens the sidebar should
+                still find their way to what the association is doing with the
+                money — the point of publishing it is that it gets read. */}
+            <Button asChild variant="outline" className="h-auto justify-start py-3">
+              <Link href="/dashboard/association">
+                <Landmark className="size-4 text-primary" aria-hidden="true" />
+                {d.nav.ourMoney}
+              </Link>
+            </Button>
             <Button asChild variant="outline" className="h-auto justify-start py-3">
               <Link href="/dashboard/savings/deposit">
                 <ArrowDownToLine className="size-4 text-primary" aria-hidden="true" />

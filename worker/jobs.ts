@@ -4,6 +4,11 @@ import { workerLogger, serialiseError } from "@/lib/logger";
 import { runReconciliation, retryFailedPayments } from "@/lib/services/reconciliation";
 import { refreshOverdueStatus } from "@/lib/services/loans";
 import { verifyAccountIntegrity } from "@/lib/services/ledger";
+import {
+  assessFines,
+  chargePlatformFees,
+  sendContributionReminders,
+} from "@/lib/services/contributions";
 import { purgeExpiredSessions } from "@/lib/auth/session";
 import { purgeExpiredQrCodes } from "@/lib/auth/qr-access";
 import { notify, retryFailedDeliveries, NOTIFICATION_EVENTS } from "@/lib/notifications";
@@ -392,5 +397,93 @@ export function workerConfig() {
     reconciliationCron: env.RECONCILIATION_CRON,
     reminderCron: env.LOAN_REMINDER_CRON,
     overdueCron: env.OVERDUE_CHECK_CRON,
+  };
+}
+
+/**
+ * THE DAILY CONTRIBUTION SWEEP.
+ *
+ * Three tasks, in a fixed order, for every active association:
+ *
+ *   1. take the platform's service fee for contribution days members have
+ *      already paid for;
+ *   2. assess the fines the rulebook calls for;
+ *   3. warn the members who are close to one.
+ *
+ * THE ORDER IS NOT ARBITRARY. Fees first, because charging them changes
+ * balances but nobody's arrears. Fines next, judged on the arrears as they now
+ * stand. Reminders last, so a member warned tonight is warned about their
+ * position AFTER tonight's fine rather than the one before it — being told
+ * "pay 6,300 to avoid a fine" by a system that fined you an hour earlier is
+ * how people stop reading the messages.
+ *
+ * EVERY TASK IS IDEMPOTENT, guaranteed by unique indexes rather than by this
+ * function being careful: (memberId, coveredThroughDay) on platform_fee_charges
+ * and (memberId, dueDayIndex) on contribution_fines. A double-run, a retry
+ * after a crash, or an officer pressing the manual button while this is
+ * mid-flight all converge on the same state.
+ *
+ * One association failing does not stop the others. An association whose rules
+ * are misconfigured must not cost every other tenant their nightly run.
+ */
+export async function runContributionDiscipline(): Promise<JobResult> {
+  const associations = await prisma.association.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, code: true },
+  });
+
+  let feesCharged = 0;
+  let finesAssessed = 0;
+  let warned = 0;
+  let cleared = 0;
+  let failed = 0;
+
+  let feeTotal = "0.00";
+  let fineTotal = "0.00";
+
+  for (const association of associations) {
+    try {
+      const fees = await chargePlatformFees(association.id);
+      const fines = await assessFines(association.id);
+      const reminders = await sendContributionReminders(association.id);
+
+      feesCharged += fees.charged;
+      finesAssessed += fines.assessed;
+      warned += reminders.warned;
+      cleared += reminders.clearedNotices;
+
+      feeTotal = toMoneyString(add(feeTotal, fees.totalCharged));
+      fineTotal = toMoneyString(add(fineTotal, fines.totalAssessed));
+
+      workerLogger.info(
+        {
+          association: association.code,
+          fees: fees.charged,
+          feesSkipped: fees.skippedInsufficientFunds,
+          fines: fines.assessed,
+          warned: reminders.warned,
+        },
+        "contribution discipline complete for association"
+      );
+    } catch (error) {
+      failed++;
+      workerLogger.error(
+        { association: association.code, ...serialiseError(error) },
+        "contribution discipline failed for association"
+      );
+    }
+  }
+
+  return {
+    associations: associations.length,
+    feesCharged,
+    feeTotal,
+    finesAssessed,
+    fineTotal,
+    warned,
+    cleared,
+    failed,
+    processed: feesCharged + finesAssessed + warned,
+    succeeded: feesCharged + finesAssessed + warned,
   };
 }

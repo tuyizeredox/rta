@@ -42,6 +42,22 @@ function createClient(): PrismaClient {
 
   return new PrismaClient({
     adapter,
+    // Prisma's built-in default is a 5s transaction budget, which is a
+    // local-Postgres number. Against a hosted database every statement inside
+    // a transaction pays real network latency, so a perfectly small
+    // transaction — the two writes an amendment makes, say — can run past it
+    // through no fault of its own. It then fails as P2028, "a rollback cannot
+    // be executed on an expired transaction", which names the timeout rather
+    // than whatever the transaction was actually doing.
+    //
+    // Money movement sets its own, longer budget in withFinancialTransaction
+    // below; this is the floor for everything else. Deliberately still finite:
+    // a transaction that has held its locks for fifteen seconds is stuck, and
+    // waiting longer only spreads the problem to whoever is queued behind it.
+    transactionOptions: {
+      timeout: 15_000,
+      maxWait: 10_000,
+    },
     log:
       env.NODE_ENV === "development"
         ? ["warn", "error"]

@@ -492,6 +492,120 @@ export interface AdminCopy {
     read: string;
     unread: string;
   };
+  /// Facilities the association itself has taken from a bank, and the
+  /// projects it spent the money on. Both screens write what members read on
+  /// /dashboard/association, so the wording here is deliberately blunt about
+  /// that: an administrator should know, while typing, who the audience is.
+  borrowings: {
+    title: string;
+    description: string;
+    noneTitle: string;
+    noneBody: string;
+    addFacility: string;
+    recordRepayment: string;
+    totalOwed: string;
+    totalOwedHint: string;
+    facilities: string;
+    nextPayment: string;
+    nothingDue: string;
+    pledged: string;
+    pledgedHint: string;
+    lender: string;
+    purpose: string;
+    principal: string;
+    rate: string;
+    term: string;
+    termMonths: string;
+    repaid: string;
+    outstanding: string;
+    matures: string;
+    security: string;
+    visibleToMembers: string;
+    hiddenFromMembers: string;
+    hiddenWarning: string;
+    repaymentHistory: string;
+    noRepayments: string;
+    principalPortion: string;
+    interestPortion: string;
+    feesPortion: string;
+    fundedProjects: string;
+    memberViewNote: string;
+
+    formTitle: string;
+    formIntro: string;
+    lenderType: string;
+    lenderReference: string;
+    lenderContact: string;
+    interestMethod: string;
+    flat: string;
+    reducing: string;
+    totalInterest: string;
+    totalInterestHint: string;
+    totalFees: string;
+    collateralAmount: string;
+    disbursedAt: string;
+    disbursedAtHint: string;
+    firstPaymentDue: string;
+    publish: string;
+    publishHint: string;
+    saved: string;
+    repaymentTitle: string;
+    repaymentIntro: string;
+    amount: string;
+    splitHint: string;
+    paidAt: string;
+    note: string;
+    externalReference: string;
+    repaymentSaved: string;
+  };
+  investments: {
+    title: string;
+    description: string;
+    noneTitle: string;
+    noneBody: string;
+    addInvestment: string;
+    totalInvested: string;
+    totalReturned: string;
+    projects: string;
+    reach: string;
+    reachHint: string;
+    category: string;
+    fundingSource: string;
+    invested: string;
+    returned: string;
+    netReturn: string;
+    benefit: string;
+    noBenefitRecorded: string;
+    benefitPrompt: string;
+    membersBenefited: string;
+    fundedBy: string;
+    started: string;
+    completed: string;
+    visibleToMembers: string;
+    hiddenFromMembers: string;
+    memberViewNote: string;
+
+    formTitle: string;
+    formIntro: string;
+    nameLabel: string;
+    summaryLabel: string;
+    detailLabel: string;
+    benefitLabel: string;
+    membersBenefitedLabel: string;
+    amountInvested: string;
+    amountReturned: string;
+    amountReturnedHint: string;
+    fundedByLabel: string;
+    fundedByNone: string;
+    startedAt: string;
+    completedAt: string;
+    statusLabel: string;
+    publish: string;
+    publishHint: string;
+    saved: string;
+    editTitle: string;
+    editIntro: string;
+  };
   settings: {
     title: string;
     descriptionPlain: string;
@@ -1086,6 +1200,133 @@ export const admin: Record<Locale, AdminCopy> = {
       inAppOnly: "In-app only",
       read: "Read",
       unread: "Unread",
+    },
+    borrowings: {
+      title: "Bank borrowing",
+      description:
+        "Money the association has borrowed. Every facility marked visible appears on the members' page.",
+      noneTitle: "No borrowing recorded",
+      noneBody:
+        "The association has taken no loan from a bank or other lender. Record one here when it does, and members will see it alongside what it paid for.",
+      addFacility: "Record a facility",
+      recordRepayment: "Record a repayment",
+      totalOwed: "Still owed",
+      totalOwedHint: "Across {count} live facility|Across {count} live facilities",
+      facilities: "Facilities",
+      nextPayment: "Next payment due",
+      nothingDue: "Nothing scheduled",
+      pledged: "Pledged against savings",
+      pledgedHint: "Borrowing as a share of members' total savings",
+      lender: "Lender",
+      purpose: "Purpose",
+      principal: "Principal",
+      rate: "Rate",
+      term: "Term",
+      termMonths: "{count} month|{count} months",
+      repaid: "Repaid",
+      outstanding: "Outstanding",
+      matures: "Matures",
+      security: "Security",
+      visibleToMembers: "Visible to members",
+      hiddenFromMembers: "Hidden from members",
+      hiddenWarning:
+        "Members cannot see this facility. If their savings secure it, they are entitled to know — hiding it is recorded in the audit log.",
+      repaymentHistory: "Repayment history",
+      noRepayments: "No repayment has been recorded against this facility yet.",
+      principalPortion: "Principal",
+      interestPortion: "Interest",
+      feesPortion: "Fees",
+      fundedProjects: "Projects funded by this facility",
+      memberViewNote:
+        "What you enter here is what members read. Write the purpose in words a member would use, not in banking terms.",
+
+      formTitle: "Record a bank facility",
+      formIntro:
+        "Enter it as the offer letter states it. Members will see the lender, the purpose, the amount and what is still owed.",
+      lenderType: "Kind of lender",
+      lenderReference: "Lender's reference",
+      lenderContact: "Contact at the lender",
+      interestMethod: "Interest method",
+      flat: "Flat",
+      reducing: "Reducing balance",
+      totalInterest: "Total interest",
+      totalInterestHint:
+        "From the offer letter. Leave blank to estimate it from the rate and term.",
+      totalFees: "Arrangement fees",
+      collateralAmount: "Value of security",
+      disbursedAt: "Date received",
+      disbursedAtHint:
+        "Leave blank until the money arrives — nothing is owed before then.",
+      firstPaymentDue: "First payment due",
+      publish: "Show this to members",
+      publishHint:
+        "Members whose savings secure this facility are entitled to see it. Withholding it is recorded in the audit log.",
+      saved: "Facility recorded.",
+      repaymentTitle: "Record a repayment",
+      repaymentIntro: "Enter it as the lender's advice note states it.",
+      amount: "Amount paid",
+      splitHint:
+        "Leave the split blank and interest is cleared first, then principal.",
+      paidAt: "Date paid",
+      note: "Note",
+      externalReference: "Bank reference",
+      repaymentSaved: "Repayment recorded.",
+    },
+    investments: {
+      title: "What our money did",
+      description:
+        "What the association put money into, and what members got out of it.",
+      noneTitle: "Nothing recorded",
+      noneBody:
+        "Equipment, workshop space, training, bulk fabric — anything the association spent members' money on belongs here, with what it cost and who it helped.",
+      addInvestment: "Record an investment",
+      totalInvested: "Put in",
+      totalReturned: "Brought back",
+      projects: "Projects",
+      reach: "Members reached",
+      reachHint: "The largest number any single project helped",
+      category: "Category",
+      fundingSource: "Paid for with",
+      invested: "Invested",
+      returned: "Returned so far",
+      netReturn: "Net",
+      benefit: "Benefit to members",
+      noBenefitRecorded: "No benefit recorded",
+      benefitPrompt:
+        "Members see this sentence. Say what changed for them, not what was bought.",
+      membersBenefited: "{count} member|{count} members",
+      fundedBy: "Funded by {reference}",
+      started: "Started",
+      completed: "Completed",
+      visibleToMembers: "Visible to members",
+      hiddenFromMembers: "Hidden from members",
+      memberViewNote:
+        "Only realised returns belong in the returns figure. A projection entered there becomes part of the surplus every member is shown, and part of the share they believe is theirs.",
+
+      formTitle: "Record an investment",
+      formIntro:
+        "What the association bought or paid for with members' money, and what members get from it.",
+      nameLabel: "What is it",
+      summaryLabel: "Describe it",
+      detailLabel: "Fuller detail",
+      benefitLabel: "What members get from it",
+      membersBenefitedLabel: "Members it helps",
+      amountInvested: "Amount put in",
+      amountReturned: "Brought back so far",
+      amountReturnedHint:
+        "Money actually received — rent, sales, savings from buying in bulk. Not what it is expected to bring.",
+      fundedByLabel: "Paid for with a bank facility",
+      fundedByNone: "Not from a bank facility",
+      startedAt: "Started",
+      completedAt: "Completed",
+      statusLabel: "Stage",
+      publish: "Show this to members",
+      publishHint:
+        "This is the page members open to see what their savings did. Hidden entries count for nothing there.",
+      saved: "Investment recorded.",
+      editTitle: "Update this investment",
+      editIntro:
+        "Raise the returns figure as it pays for itself, and fill in the benefit once there is something real to say.",
     },
     settings: {
       title: "Association settings",
@@ -1705,6 +1946,133 @@ export const admin: Record<Locale, AdminCopy> = {
       inAppOnly: "Muri porogaramu gusa",
       read: "Bwasomwe",
       unread: "Butarasomwa",
+    },
+    borrowings: {
+      title: "Inguzanyo za banki",
+      description:
+        "Amafaranga ihuriro ryaguzwe. Buri nguzanyo yashyizwe ahagaragara igaragara ku ipaji y'abanyamuryango.",
+      noneTitle: "Nta nguzanyo yanditswe",
+      noneBody:
+        "Ihuriro nta nguzanyo ryafashe muri banki cyangwa ku wundi muguriza. Yandike hano niriyifata, kandi abanyamuryango bazayibona hamwe n'ibyo yishyuye.",
+      addFacility: "Andika inguzanyo",
+      recordRepayment: "Andika ubwishyu",
+      totalOwed: "Agisigaye",
+      totalOwedHint: "Mu nguzanyo {count} ikora|Mu nguzanyo {count} zikora",
+      facilities: "Inguzanyo",
+      nextPayment: "Ubwishyu bukurikira",
+      nothingDue: "Nta bwishyu buteganyijwe",
+      pledged: "Byatanzwe nk'ingwate",
+      pledgedHint: "Inguzanyo ugereranyije n'ubuzigame bwose bw'abanyamuryango",
+      lender: "Umuguriza",
+      purpose: "Icyo yagenewe",
+      principal: "Umutungo w'ibanze",
+      rate: "Igipimo cy'inyungu",
+      term: "Igihe",
+      termMonths: "Ukwezi {count}|Amezi {count}",
+      repaid: "Yishyuwe",
+      outstanding: "Agisigaye",
+      matures: "Irangira",
+      security: "Ingwate",
+      visibleToMembers: "Bigaragara ku banyamuryango",
+      hiddenFromMembers: "Bihishwe abanyamuryango",
+      hiddenWarning:
+        "Abanyamuryango ntibashobora kubona iyi nguzanyo. Niba ubuzigame bwabo ari bwo ngwate, bafite uburenganzira bwo kubimenya — guhisha bijya mu byanditswe by'igenzura.",
+      repaymentHistory: "Amateka y'ubwishyu",
+      noRepayments: "Nta bwishyu buranditswe kuri iyi nguzanyo.",
+      principalPortion: "Umutungo w'ibanze",
+      interestPortion: "Inyungu",
+      feesPortion: "Amafaranga",
+      fundedProjects: "Imishinga yishyuwe n'iyi nguzanyo",
+      memberViewNote:
+        "Ibyo wandika hano ni byo abanyamuryango basoma. Andika icyo yagenewe mu magambo umunyamuryango yakoresha, atari mu magambo ya banki.",
+
+      formTitle: "Andika inguzanyo ya banki",
+      formIntro:
+        "Yandike uko ibaruwa y'umuguriza ibivuga. Abanyamuryango bazabona umuguriza, icyo yagenewe, ingano n'agisigaye.",
+      lenderType: "Ubwoko bw'umuguriza",
+      lenderReference: "Nomero y'umuguriza",
+      lenderContact: "Uwo muvugana ku muguriza",
+      interestMethod: "Uburyo bw'inyungu",
+      flat: "Ihoraho",
+      reducing: "Igabanuka",
+      totalInterest: "Inyungu yose",
+      totalInterestHint:
+        "Iva mu ibaruwa y'umuguriza. Nusiga ubusa, izabarwa hakoreshejwe igipimo n'igihe.",
+      totalFees: "Amafaranga y'itegurwa",
+      collateralAmount: "Agaciro k'ingwate",
+      disbursedAt: "Itariki yakiriweho",
+      disbursedAtHint:
+        "Siga ubusa kugeza amafaranga agiye kuboneka — nta kintu kirabereyemo mbere y'aho.",
+      firstPaymentDue: "Ubwishyu bwa mbere",
+      publish: "Bibonwe n'abanyamuryango",
+      publishHint:
+        "Abanyamuryango ubuzigame bwabo ari bwo ngwate bafite uburenganzira bwo kubibona. Kubihisha bijya mu byanditswe by'igenzura.",
+      saved: "Inguzanyo yanditswe.",
+      repaymentTitle: "Andika ubwishyu",
+      repaymentIntro: "Bwandike uko inyandiko y'umuguriza ibivuga.",
+      amount: "Amafaranga yishyuwe",
+      splitHint:
+        "Nusiga igabana ubusa, inyungu ibanza kwishyurwa, hakurikireho umutungo w'ibanze.",
+      paidAt: "Itariki yishyuriweho",
+      note: "Icyitonderwa",
+      externalReference: "Nomero ya banki",
+      repaymentSaved: "Ubwishyu bwanditswe.",
+    },
+    investments: {
+      title: "Icyo amafaranga yacu yakoze",
+      description:
+        "Ibyo ihuriro rishoyemo amafaranga, n'ibyo abanyamuryango babikuyemo.",
+      noneTitle: "Nta kintu kiranditswe",
+      noneBody:
+        "Ibikoresho, ahakorerwa, amahugurwa, imyenda yaguzwe ari myinshi — ikintu cyose ihuriro ryakoresheje amafaranga y'abanyamuryango kigomba kuza hano, hamwe n'ikiguzi n'abo cyafashije.",
+      addInvestment: "Andika ishoramari",
+      totalInvested: "Yashowe",
+      totalReturned: "Yagarutse",
+      projects: "Imishinga",
+      reach: "Abanyamuryango bagezweho",
+      reachHint: "Umubare munini umushinga umwe wafashije",
+      category: "Ubwoko",
+      fundingSource: "Byishyuwe na",
+      invested: "Yashowe",
+      returned: "Yagarutse kugeza ubu",
+      netReturn: "Icyavuyemo",
+      benefit: "Icyo abanyamuryango babikuramo",
+      noBenefitRecorded: "Nta nyungu yanditswe",
+      benefitPrompt:
+        "Abanyamuryango basoma iyi nteruro. Vuga icyahindutse kuri bo, atari icyaguzwe.",
+      membersBenefited: "Umunyamuryango {count}|Abanyamuryango {count}",
+      fundedBy: "Byishyuwe na {reference}",
+      started: "Byatangiye",
+      completed: "Byarangiye",
+      visibleToMembers: "Bigaragara ku banyamuryango",
+      hiddenFromMembers: "Bihishwe abanyamuryango",
+      memberViewNote:
+        "Inyungu yagarutse koko ni yo yonyine igomba kwandikwa. Urugero rwandikwaho ruba igice cy'inyungu buri munyamuryango yerekwa, n'igice cy'umugabane akeka ko ari uwe.",
+
+      formTitle: "Andika ishoramari",
+      formIntro:
+        "Icyo ihuriro ryaguze cyangwa ryishyuye rikoresheje amafaranga y'abanyamuryango, n'icyo abanyamuryango babikuramo.",
+      nameLabel: "Ni iki",
+      summaryLabel: "Kivuge muri make",
+      detailLabel: "Ibisobanuro birambuye",
+      benefitLabel: "Icyo abanyamuryango babikuramo",
+      membersBenefitedLabel: "Abanyamuryango bifasha",
+      amountInvested: "Amafaranga yashowe",
+      amountReturned: "Yagarutse kugeza ubu",
+      amountReturnedHint:
+        "Amafaranga yakiriwe koko — ubukode, ibyacurujwe, ayazigamwe mu kugura ari byinshi. Si ayateganyijwe kuzabonekaho.",
+      fundedByLabel: "Byishyuwe n'inguzanyo ya banki",
+      fundedByNone: "Ntibyavuye ku nguzanyo ya banki",
+      startedAt: "Byatangiye",
+      completedAt: "Byarangiye",
+      statusLabel: "Aho bigeze",
+      publish: "Bibonwe n'abanyamuryango",
+      publishHint:
+        "Iyi ni paji abanyamuryango bafungura kugira ngo barebe icyo ubuzigame bwabo bwakoze. Ibihishwe nta cyo bimarayo.",
+      saved: "Ishoramari ryanditswe.",
+      editTitle: "Vugurura iri shoramari",
+      editIntro:
+        "Zamura umubare w'inyungu uko ryigaburira, kandi wuzuze inyungu igihe hari icyo kuvuga koko.",
     },
     settings: {
       title: "Igenamiterere ry'ihuriro",

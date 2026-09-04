@@ -71,6 +71,33 @@ export const PERMISSIONS = {
   NOTIFICATIONS_SEND: "notifications.send",
   NOTIFICATIONS_BROADCAST: "notifications.broadcast",
 
+  // Association finances ---------------------------------------------------
+  // The association's OWN money: what it borrowed from a bank and what it put
+  // the money into. No `_own` counterpart exists because there is nothing
+  // personal here — the member-facing view of these records is open to every
+  // member by virtue of membership, not by a grant. These control who may see
+  // the unpublished ones and who may write them.
+  BORROWINGS_VIEW: "borrowings.view",
+  BORROWINGS_MANAGE: "borrowings.manage",
+  INVESTMENTS_VIEW: "investments.view",
+  INVESTMENTS_MANAGE: "investments.manage",
+
+  // The rulebook and contribution discipline --------------------------------
+  // No `_own` counterpart for RULES_VIEW: the rules are open to every member
+  // by virtue of membership, not by a grant, and the member-facing page has no
+  // permission check at all. These control who may AMEND the rules everyone
+  // lives under, and who may act on a member's arrears.
+  RULES_MANAGE: "rules.manage",
+  COMPLIANCE_VIEW: "compliance.view",
+  /// Charging a fine to somebody's savings, or forgiving one. Kept apart from
+  /// COMPLIANCE_VIEW because seeing who is behind and taking money from them
+  /// are different levels of trust.
+  COMPLIANCE_ACT: "compliance.act",
+  /// The platform's service fee: seeing what has been collected on the
+  /// operator's behalf, and recording that it has been paid over.
+  PLATFORM_FEES_VIEW: "platform_fees.view",
+  PLATFORM_FEES_REMIT: "platform_fees.remit",
+
   // Association / platform administration -----------------------------------
   ASSOCIATION_VIEW: "association.view",
   ASSOCIATION_UPDATE: "association.update",
@@ -154,6 +181,17 @@ export const PERMISSION_METADATA: Record<
   [PERMISSIONS.NOTIFICATIONS_VIEW_OWN]: { name: "View notifications", category: "Notifications", description: "See your own notifications" },
   [PERMISSIONS.NOTIFICATIONS_SEND]: { name: "Send notifications", category: "Notifications", description: "Message individual members" },
   [PERMISSIONS.NOTIFICATIONS_BROADCAST]: { name: "Broadcast", category: "Notifications", description: "Message all members at once" },
+
+  [PERMISSIONS.BORROWINGS_VIEW]: { name: "View borrowings", category: "Association finances", description: "See every facility the association has taken from a bank, including unpublished ones" },
+  [PERMISSIONS.BORROWINGS_MANAGE]: { name: "Manage borrowings", category: "Association finances", description: "Record a new bank facility, its repayments, and what members are told about it" },
+  [PERMISSIONS.INVESTMENTS_VIEW]: { name: "View investments", category: "Association finances", description: "See everything the association has put money into, including unpublished entries" },
+  [PERMISSIONS.INVESTMENTS_MANAGE]: { name: "Manage investments", category: "Association finances", description: "Record what the association invested in, what it returned, and the benefit to members" },
+
+  [PERMISSIONS.RULES_MANAGE]: { name: "Amend the rulebook", category: "Rules & discipline", description: "Change what members save, what the fine is, who may borrow and on what terms — every change is recorded with a reason" },
+  [PERMISSIONS.COMPLIANCE_VIEW]: { name: "View contribution standing", category: "Rules & discipline", description: "See who is up to date on the daily saving, who is behind, and what fines are owed" },
+  [PERMISSIONS.COMPLIANCE_ACT]: { name: "Act on arrears", category: "Rules & discipline", description: "Collect a fine from a member's savings, waive one, or excuse a member from contributing" },
+  [PERMISSIONS.PLATFORM_FEES_VIEW]: { name: "View service fees", category: "Rules & discipline", description: "See the platform service fee collected from members and what is owed to the operator" },
+  [PERMISSIONS.PLATFORM_FEES_REMIT]: { name: "Record fee remittance", category: "Rules & discipline", description: "Mark collected service fees as paid over to the platform operator" },
 
   [PERMISSIONS.ASSOCIATION_VIEW]: { name: "View association", category: "Association", description: "See association details" },
   [PERMISSIONS.ASSOCIATION_UPDATE]: { name: "Edit association", category: "Association", description: "Change association profile and contact details" },
@@ -240,6 +278,20 @@ export const ROLE_PERMISSIONS: Record<UserRole, PermissionCode[]> = {
     PERMISSIONS.NOTIFICATIONS_VIEW_OWN,
     PERMISSIONS.NOTIFICATIONS_SEND,
     PERMISSIONS.NOTIFICATIONS_BROADCAST,
+
+    PERMISSIONS.BORROWINGS_VIEW,
+    PERMISSIONS.BORROWINGS_MANAGE,
+    PERMISSIONS.INVESTMENTS_VIEW,
+    PERMISSIONS.INVESTMENTS_MANAGE,
+
+    PERMISSIONS.RULES_MANAGE,
+    PERMISSIONS.COMPLIANCE_VIEW,
+    PERMISSIONS.COMPLIANCE_ACT,
+    PERMISSIONS.PLATFORM_FEES_VIEW,
+    // PLATFORM_FEES_REMIT is deliberately withheld from the default admin
+    // role. Declaring the operator's fee paid is a statement about money that
+    // left the association's hands, and it should be made by whoever actually
+    // makes that payment — granted per person, like SAVINGS_ADJUST.
 
     PERMISSIONS.ASSOCIATION_VIEW,
     PERMISSIONS.ASSOCIATION_UPDATE,

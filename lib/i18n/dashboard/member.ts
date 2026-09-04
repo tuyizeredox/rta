@@ -322,6 +322,104 @@ export interface MemberCopy {
     anAdministrator: string;
     orCall: string;
   };
+  /**
+   * The association's own books, read by a member.
+   *
+   * The hardest section in this file to translate, because most of it has no
+   * settled Kinyarwanda equivalent — savings associations here keep their
+   * accounts verbally. Where no term exists the phrasing is descriptive rather
+   * than a coinage: "amafaranga ihuriro rifite" says what it means to someone
+   * who has never read a balance sheet, and a member who does not understand
+   * the words on this page is exactly the reader it fails.
+   */
+  association: {
+    title: string;
+    description: string;
+
+    pool: string;
+    poolHint: string;
+    lentOut: string;
+    lentOutHint: string;
+    lentOutOwed: string;
+    borrowed: string;
+    borrowedHint: string;
+    noBorrowingHint: string;
+    surplus: string;
+    loss: string;
+    surplusHint: string;
+    lossHint: string;
+
+    yourStakeTitle: string;
+    yourStakeBody: string;
+    yourSavings: string;
+    yourShare: string;
+    yourIndicativeShare: string;
+    indicativeNote: string;
+
+    whereTitle: string;
+    whereHint: string;
+    whereLent: string;
+    whereInvested: string;
+    whereHeld: string;
+    /// The platform's service fee, collected and not yet paid over. Shown on
+    /// the members' own page so the association is never seen to be holding
+    /// money it has not accounted for.
+    whereServiceFee: string;
+    booksIncompleteTitle: string;
+    booksIncompleteBody: string;
+
+    statementTitle: string;
+    statementHint: string;
+    earnedTitle: string;
+    loanInterest: string;
+    loanFees: string;
+    penalties: string;
+    accountFees: string;
+    investmentReturns: string;
+    totalEarned: string;
+    spentTitle: string;
+    memberInterest: string;
+    borrowingInterest: string;
+    borrowingFees: string;
+    totalSpent: string;
+    netSurplus: string;
+    netLoss: string;
+
+    incomeTrend: string;
+    incomeTrendHint: string;
+    incomeTrendEmpty: string;
+
+    borrowingsTitle: string;
+    borrowingsHint: string;
+    noBorrowingsTitle: string;
+    noBorrowingsBody: string;
+    pledgedTitle: string;
+    pledgedBody: string;
+    lender: string;
+    purpose: string;
+    facilityAmount: string;
+    repaid: string;
+    stillOwed: string;
+    interestRate: string;
+    nextPayment: string;
+    matures: string;
+    security: string;
+    fundedProjects: string;
+    overdueWarning: string;
+
+    investmentsTitle: string;
+    investmentsHint: string;
+    noInvestmentsTitle: string;
+    noInvestmentsBody: string;
+    invested: string;
+    returnedSoFar: string;
+    benefitTitle: string;
+    membersBenefited: string;
+    paidForBy: string;
+    projectsCount: string;
+
+    sourceNote: string;
+  };
   security: {
     title: string;
     description: string;
@@ -695,6 +793,104 @@ export const member: Record<Locale, MemberCopy> = {
         "Your membership number, payment reference and membership status are set by the association and are not editable here. To correct one of those, contact",
       anAdministrator: "an administrator",
       orCall: "or call {phone}",
+    },
+    association: {
+      title: "Our association's money",
+      description:
+        "Everything the association holds, owes and has earned. The same figures the committee sees.",
+
+      pool: "Members' savings",
+      poolHint: "Saved by {count} members",
+      lentOut: "Lent to members",
+      lentOutHint: "Across {count} running loans",
+      lentOutOwed: "{amount} owed once interest is added",
+      borrowed: "Borrowed from lenders",
+      borrowedHint: "Across {count} facilities",
+      noBorrowingHint: "The association has no debt",
+      surplus: "Surplus earned",
+      loss: "Loss so far",
+      surplusHint: "Since the association started",
+      lossHint: "Costs have exceeded income so far",
+
+      yourStakeTitle: "Your part in this",
+      yourStakeBody:
+        "Your savings are {percent}% of everything members have put in.",
+      yourSavings: "Your savings",
+      yourShare: "Your share of the pool",
+      yourIndicativeShare: "Your share of the surplus",
+      indicativeNote:
+        "This is an indication, not money you can withdraw. A surplus becomes yours only when the general meeting resolves to share it out.",
+
+      whereTitle: "Where the money is",
+      whereHint:
+        "What members saved, plus what the association borrowed, less what has gone out.",
+      whereLent: "Out on loan to members",
+      whereInvested: "Put into projects",
+      whereHeld: "Not yet lent out or invested",
+      whereServiceFee: "Service fee held for the platform",
+      booksIncompleteTitle: "These figures do not balance",
+      booksIncompleteBody:
+        "More has been lent out and invested than the records account for. Ask the committee to check that every loan, project and bank facility has been entered.",
+
+      statementTitle: "How the surplus was earned",
+      statementHint:
+        "Money actually received and actually paid — not what is still owed.",
+      earnedTitle: "What came in",
+      loanInterest: "Interest on member loans",
+      loanFees: "Loan fees",
+      penalties: "Late-payment penalties",
+      accountFees: "Account fees",
+      investmentReturns: "Returns from projects",
+      totalEarned: "Total earned",
+      spentTitle: "What it cost",
+      memberInterest: "Interest paid to members",
+      borrowingInterest: "Interest paid to lenders",
+      borrowingFees: "Lender fees",
+      totalSpent: "Total cost",
+      netSurplus: "Surplus",
+      netLoss: "Loss",
+
+      incomeTrend: "What lending earned",
+      incomeTrendHint: "Interest, fees and penalties received each month",
+      incomeTrendEmpty:
+        "Nothing yet. This fills in as members repay their loans.",
+
+      borrowingsTitle: "Money the association borrowed",
+      borrowingsHint:
+        "Loans taken from a bank or other lender to back the members' savings.",
+      noBorrowingsTitle: "The association owes nothing",
+      noBorrowingsBody:
+        "Everything the association lends and invests comes from members' own savings. If it ever borrows, the facility will appear here.",
+      pledgedTitle: "{percent}% of your savings is pledged",
+      pledgedBody:
+        "The association's borrowing equals {percent}% of everything members have saved. That security is what the lender can claim if the association cannot repay.",
+      lender: "Lender",
+      purpose: "What it is for",
+      facilityAmount: "Borrowed",
+      repaid: "Repaid so far",
+      stillOwed: "Still owed",
+      interestRate: "Interest",
+      nextPayment: "Next payment",
+      matures: "Final payment",
+      security: "Security given",
+      fundedProjects: "This paid for",
+      overdueWarning: "This facility is {days} day late.|This facility is {days} days late.",
+
+      investmentsTitle: "What our money did",
+      investmentsHint:
+        "What the association put money into, and what members got out of it.",
+      noInvestmentsTitle: "Nothing recorded yet",
+      noInvestmentsBody:
+        "When the association buys equipment, rents a workshop or funds training, it will be listed here with what it cost and who it helped.",
+      invested: "Put in",
+      returnedSoFar: "Brought back so far",
+      benefitTitle: "What members get from it",
+      membersBenefited: "{count} member helped|{count} members helped",
+      paidForBy: "Paid for with {source}",
+      projectsCount: "{count} project|{count} projects",
+
+      sourceNote:
+        "Every figure on this page is added up from the association's own records of payments, loans and repayments. Nothing here is an estimate. If something looks wrong, raise it with the committee — and it will be visible in the audit log.",
     },
     security: {
       title: "Security & password",
@@ -1077,6 +1273,106 @@ export const member: Record<Locale, MemberCopy> = {
         "Nimero y'ubunyamuryango, nimero y'ubwishyu n'imiterere y'ubunyamuryango bishyirwaho n'ihuriro kandi ntibihindurirwa hano. Kugira ngo ukosore kimwe muri byo, vugana na",
       anAdministrator: "umuyobozi",
       orCall: "cyangwa uhamagare {phone}",
+    },
+    association: {
+      title: "Amafaranga y'ihuriro ryacu",
+      description:
+        "Ibyo ihuriro rifite, ibyo ribereyemo abandi n'inyungu ryinjije. Ni imibare imwe komite ibona.",
+
+      pool: "Ubuzigame bw'abanyamuryango",
+      poolHint: "Bwazigamwe n'abanyamuryango {count}",
+      lentOut: "Yatanzwe ku banyamuryango",
+      lentOutHint: "Mu nguzanyo {count} zigikora",
+      lentOutOwed: "{amount} bagomba kwishyura hiyongereyeho inyungu",
+      borrowed: "Yaguzwe ku baguriza",
+      borrowedHint: "Mu nguzanyo {count}",
+      noBorrowingHint: "Ihuriro nta mwenda rifite",
+      surplus: "Inyungu yinjiye",
+      loss: "Igihombo kugeza ubu",
+      surplusHint: "Kuva ihuriro ryatangira",
+      lossHint: "Ikiguzi kirenze ibyinjiye kugeza ubu",
+
+      yourStakeTitle: "Umugabane wawe muri ibi",
+      yourStakeBody:
+        "Ubuzigame bwawe ni {percent}% by'ibyo abanyamuryango bose bashyizemo.",
+      yourSavings: "Ubuzigame bwawe",
+      yourShare: "Umugabane wawe mu buzigame bwose",
+      yourIndicativeShare: "Umugabane wawe ku nyungu",
+      indicativeNote:
+        "Iyi ni imibare y'urugero, si amafaranga wakura ubu. Inyungu iba iyawe gusa igihe inteko rusange yemeje ko igabanywa.",
+
+      whereTitle: "Aho amafaranga ari",
+      whereHint:
+        "Ibyo abanyamuryango bazigamye, hiyongereyeho ibyo ihuriro ryaguzwe, hakuwemo ibyasohotse.",
+      whereLent: "Ari mu nguzanyo z'abanyamuryango",
+      whereInvested: "Ashowe mu mishinga",
+      whereHeld: "Ataratangwa cyangwa ngo ashorwe",
+      whereServiceFee: "Serivisi ibikiwe urubuga",
+      booksIncompleteTitle: "Iyi mibare ntihuye",
+      booksIncompleteBody:
+        "Hatanzwe kandi hashowe menshi kurusha ibyanditswe. Saba komite kugenzura ko buri nguzanyo, buri mushinga na buri nguzanyo ya banki byanditswe.",
+
+      statementTitle: "Uko inyungu yabonetse",
+      statementHint:
+        "Amafaranga yakiriwe koko n'ayatanzwe koko — si ayagitegerejwe.",
+      earnedTitle: "Ibyinjiye",
+      loanInterest: "Inyungu ku nguzanyo z'abanyamuryango",
+      loanFees: "Amafaranga y'inguzanyo",
+      penalties: "Amande yo gutinda kwishyura",
+      accountFees: "Amafaranga ya konti",
+      investmentReturns: "Inyungu ziva mu mishinga",
+      totalEarned: "Byinjiye byose",
+      spentTitle: "Ikiguzi",
+      memberInterest: "Inyungu yahawe abanyamuryango",
+      borrowingInterest: "Inyungu yahawe abaguriza",
+      borrowingFees: "Amafaranga y'abaguriza",
+      totalSpent: "Ikiguzi cyose",
+      netSurplus: "Inyungu",
+      netLoss: "Igihombo",
+
+      incomeTrend: "Ibyo inguzanyo zinjije",
+      incomeTrendHint: "Inyungu, amafaranga n'amande byakiriwe buri kwezi",
+      incomeTrendEmpty:
+        "Nta kintu kiraboneka. Bizuzura uko abanyamuryango bishyura inguzanyo zabo.",
+
+      borrowingsTitle: "Amafaranga ihuriro ryaguzwe",
+      borrowingsHint:
+        "Inguzanyo zavuye muri banki cyangwa undi muguriza kugira ngo zishyigikire ubuzigame bw'abanyamuryango.",
+      noBorrowingsTitle: "Ihuriro nta mwenda rifite",
+      noBorrowingsBody:
+        "Ibyo ihuriro ritanga kandi rishora byose biva mu buzigame bw'abanyamuryango. Niriramuka ryaguze, inguzanyo izagaragara hano.",
+      pledgedTitle: "{percent}% by'ubuzigame bwawe bwatanzwe nk'ingwate",
+      pledgedBody:
+        "Inguzanyo z'ihuriro zingana na {percent}% by'ibyo abanyamuryango bose bazigamye. Iyo ngwate ni yo umuguriza yafata ihuriro ridashoboye kwishyura.",
+      lender: "Umuguriza",
+      purpose: "Icyo yagenewe",
+      facilityAmount: "Yaguzwe",
+      repaid: "Yishyuwe kugeza ubu",
+      stillOwed: "Agisigaye",
+      interestRate: "Inyungu",
+      nextPayment: "Ubwishyu bukurikira",
+      matures: "Ubwishyu bwa nyuma",
+      security: "Ingwate yatanzwe",
+      fundedProjects: "Ibi yishyuye",
+      overdueWarning:
+        "Iyi nguzanyo yatinze umunsi {days}.|Iyi nguzanyo yatinze iminsi {days}.",
+
+      investmentsTitle: "Icyo amafaranga yacu yakoze",
+      investmentsHint:
+        "Ibyo ihuriro rishoyemo amafaranga, n'ibyo abanyamuryango babikuyemo.",
+      noInvestmentsTitle: "Nta kintu kiranditswe",
+      noInvestmentsBody:
+        "Igihe ihuriro rizagura ibikoresho, rikodesha ahakorerwa cyangwa rigatera inkunga amahugurwa, bizandikwa hano hamwe n'ikiguzi n'abo byafashije.",
+      invested: "Yashowe",
+      returnedSoFar: "Yagarutse kugeza ubu",
+      benefitTitle: "Icyo abanyamuryango babikuramo",
+      membersBenefited:
+        "Umunyamuryango {count} yafashijwe|Abanyamuryango {count} bafashijwe",
+      paidForBy: "Byishyuwe na {source}",
+      projectsCount: "Umushinga {count}|Imishinga {count}",
+
+      sourceNote:
+        "Buri mubare uri kuri iyi paji uterurwa mu byanditswe by'ihuriro ku bwishyu, inguzanyo no kwishyura. Nta kintu na kimwe hano ari urugero. Niba hari ikitagenda neza, bibwire komite — kandi bizagaragara mu byanditswe by'igenzura.",
     },
     security: {
       title: "Umutekano n'ijambobanga",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Copy, Loader2, Save, UserPlus } from "lucide-react";
 import { Field } from "@/components/ui/field";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input, NativeSelect, Textarea } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { RwandaLocationFields } from "@/components/ui/rwanda-location-fields";
@@ -308,18 +308,13 @@ export function MemberForm({ member }: { member?: MemberFormValues }) {
 
           <Field id="gender" label={field.gender} error={errors.gender}>
             {(props) => (
-              <select
-                name="gender"
-                defaultValue={member?.gender ?? ""}
-                className="h-12 w-full rounded-xl border border-border bg-surface px-4 text-[15px] text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                {...props}
-              >
+              <NativeSelect name="gender" defaultValue={member?.gender ?? ""} {...props}>
                 {genders.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
                 ))}
-              </select>
+              </NativeSelect>
             )}
           </Field>
         </div>
@@ -423,15 +418,10 @@ export function MemberForm({ member }: { member?: MemberFormValues }) {
           {!editing && (
             <Field id="status" label={copy.membershipStatus} error={errors.status}>
               {(props) => (
-                <select
-                  name="status"
-                  defaultValue="ACTIVE"
-                  className="h-12 w-full rounded-xl border border-border bg-surface px-4 text-[15px] text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  {...props}
-                >
+                <NativeSelect name="status" defaultValue="ACTIVE" {...props}>
                   <option value="ACTIVE">{copy.statusActive}</option>
                   <option value="PENDING_APPROVAL">{copy.statusPending}</option>
-                </select>
+                </NativeSelect>
               )}
             </Field>
           )}

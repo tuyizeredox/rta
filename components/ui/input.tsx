@@ -60,4 +60,37 @@ function Textarea({
   );
 }
 
-export { Input, Textarea };
+/**
+ * Native `<select>`, styled to match `Input`.
+ *
+ * Exists so a plain dropdown gets the same `invalid` handling as every other
+ * control: `invalid` is consumed here rather than reaching the DOM, where React
+ * warns about a boolean on a non-boolean attribute, and it drives the same red
+ * border the text fields use. The Radix `Select` in `ui/select.tsx` is the
+ * richer option; this one is for short lists inside plain forms that post
+ * normally, where a hidden input to carry the value would be pure overhead.
+ */
+function NativeSelect({
+  className,
+  invalid,
+  ...props
+}: React.ComponentProps<"select"> & { invalid?: boolean }) {
+  return (
+    <select
+      data-slot="native-select"
+      aria-invalid={invalid || undefined}
+      className={cn(
+        "h-12 w-full rounded-xl border bg-surface px-4 text-[15px] text-ink transition-colors",
+        "focus:outline-none focus:ring-2 focus:ring-primary/30",
+        "disabled:cursor-not-allowed disabled:bg-ink/[0.03] disabled:text-ink-muted",
+        invalid
+          ? "border-red-400 focus:border-red-500 focus:ring-red-500/25"
+          : "border-border focus:border-primary",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export { Input, Textarea, NativeSelect };

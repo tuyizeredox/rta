@@ -99,6 +99,49 @@ export const AUDIT_ACTIONS = {
   LOAN_PENALTY_WAIVED: "LOAN_PENALTY_WAIVED",
   LOAN_PRODUCT_UPDATED: "LOAN_PRODUCT_UPDATED",
 
+  // Association borrowing & investment
+  /// The association took on, changed, or repaid a debt of its own. Kept apart
+  /// from the LOAN_* verbs above: those describe money lent to a member, these
+  /// describe money the association owes a bank. When a member later asks "who
+  /// pledged our savings, and when", one verb covering both cannot answer it.
+  BORROWING_RECORDED: "BORROWING_RECORDED",
+  BORROWING_UPDATED: "BORROWING_UPDATED",
+  BORROWING_REPAYMENT_RECORDED: "BORROWING_REPAYMENT_RECORDED",
+  /// Publishing is its own event because hiding a facility from the members
+  /// whose savings secure it is a decision someone has to own.
+  BORROWING_VISIBILITY_CHANGED: "BORROWING_VISIBILITY_CHANGED",
+  INVESTMENT_RECORDED: "INVESTMENT_RECORDED",
+  INVESTMENT_UPDATED: "INVESTMENT_UPDATED",
+  INVESTMENT_VISIBILITY_CHANGED: "INVESTMENT_VISIBILITY_CHANGED",
+
+  // The rulebook
+  /// A rule the members live under was reworded, retuned or withdrawn. Kept
+  /// apart from SETTING_CHANGED, which covers technical configuration nobody
+  /// outside the office ever reads: these are the terms of membership, and
+  /// "who raised the fine rate, and what reason did they give" is a question
+  /// with a different audience and a longer memory.
+  RULE_ADDED: "RULE_ADDED",
+  RULE_AMENDED: "RULE_AMENDED",
+  RULE_REMOVED: "RULE_REMOVED",
+
+  // Contribution discipline
+  /// The daily service fee taken from a member's savings. Recorded separately
+  /// from SAVINGS_* because the money leaves the association's world entirely
+  /// — it is the platform's, and an auditor asking what was collected on whose
+  /// behalf must not have to infer it from a fee-typed ledger row.
+  PLATFORM_FEE_CHARGED: "PLATFORM_FEE_CHARGED",
+  PLATFORM_FEE_WAIVED: "PLATFORM_FEE_WAIVED",
+  PLATFORM_FEE_REMITTED: "PLATFORM_FEE_REMITTED",
+  CONTRIBUTION_FINE_ASSESSED: "CONTRIBUTION_FINE_ASSESSED",
+  CONTRIBUTION_FINE_SETTLED: "CONTRIBUTION_FINE_SETTLED",
+  CONTRIBUTION_FINE_WAIVED: "CONTRIBUTION_FINE_WAIVED",
+  CONTRIBUTION_FINE_CANCELLED: "CONTRIBUTION_FINE_CANCELLED",
+  /// Somebody was excused from contributing, or brought back into it.
+  CONTRIBUTION_EXEMPTION_CHANGED: "CONTRIBUTION_EXEMPTION_CHANGED",
+  /// Interest collected on a loan was split between the borrower's savings and
+  /// the association, per the interest-sharing rule.
+  INTEREST_DISTRIBUTED: "INTEREST_DISTRIBUTED",
+
   // Administration
   SUPER_ADMIN_CREATED_ADMIN: "SUPER_ADMIN_CREATED_ADMIN",
   ADMIN_UPDATED: "ADMIN_UPDATED",
@@ -155,6 +198,15 @@ const REASON_REQUIRED: ReadonlySet<string> = new Set<string>([
   AUDIT_ACTIONS.MEMBER_SUSPENDED,
   AUDIT_ACTIONS.PAYMENT_MATCHED_MANUALLY,
   AUDIT_ACTIONS.PAYMENT_DELETED,
+  // Amending the rulebook and forgiving a fine are the two places where an
+  // officer's decision costs the association money or costs a member their
+  // expectations. Neither may be done anonymously or unexplained.
+  AUDIT_ACTIONS.RULE_AMENDED,
+  AUDIT_ACTIONS.RULE_REMOVED,
+  AUDIT_ACTIONS.CONTRIBUTION_FINE_WAIVED,
+  AUDIT_ACTIONS.CONTRIBUTION_FINE_CANCELLED,
+  AUDIT_ACTIONS.PLATFORM_FEE_WAIVED,
+  AUDIT_ACTIONS.CONTRIBUTION_EXEMPTION_CHANGED,
 ]);
 
 /** Actions serious enough to stand out when scanning the log. */

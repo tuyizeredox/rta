@@ -125,6 +125,12 @@ const STATUS_TONES: Record<string, StatusTone> = {
   PARTIAL: "warning",
   SKIPPED: "neutral",
 
+  // Investments. PLANNED reads as "not started yet", which is the same
+  // promise-not-yet-kept as a pending record elsewhere; PAUSED is a warning
+  // because a member seeing it is entitled to ask why.
+  PLANNED: "pending",
+  PAUSED: "warning",
+
   // Roles
   MEMBER: "neutral",
   ADMIN: "info",

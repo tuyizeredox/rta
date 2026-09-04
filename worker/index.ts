@@ -8,6 +8,7 @@ import {
   detectOverdueLoans,
   reconcilePayments,
   retryNotifications,
+  runContributionDiscipline,
   runJob,
   sendRepaymentReminders,
   verifyLedgerIntegrity,
@@ -42,6 +43,10 @@ const JOBS = {
   notifications: { name: "notification-retry", fn: retryNotifications },
   cleanup: { name: "cleanup-expired", fn: cleanupExpiredRecords },
   summary: { name: "daily-financial-summary", fn: dailyFinancialSummary },
+  contributions: {
+    name: "contribution-discipline",
+    fn: runContributionDiscipline,
+  },
 } as const;
 
 type JobKey = keyof typeof JOBS;
@@ -97,6 +102,17 @@ async function main() {
     void runJob(JOBS.reminders.name, JOBS.reminders.fn);
   });
 
+  // The daily saving: service fee, fines and warnings. Runs at 01:30, before
+  // the arrears check and well before anyone opens a screen, so a member who
+  // is fined overnight sees the fine and the warning that preceded it in the
+  // right order when they wake up.
+  //
+  // Ahead of the integrity sweep deliberately: this job posts ledger rows, and
+  // the sweep should verify the books as they stand after it, not before.
+  cron.schedule("30 1 * * *", () => {
+    void runJob(JOBS.contributions.name, JOBS.contributions.fn);
+  });
+
   // Integrity sweep nightly. The one job whose failure is an emergency.
   cron.schedule("30 2 * * *", () => {
     void runJob(JOBS.integrity.name, JOBS.integrity.fn);
@@ -119,6 +135,7 @@ async function main() {
       reconciliation: config.reconciliationCron,
       overdue: config.overdueCron,
       reminders: config.reminderCron,
+      contributions: "30 1 * * *",
       integrity: "30 2 * * *",
       notificationRetry: "*/10 * * * *",
       cleanup: "0 3 * * *",

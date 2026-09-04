@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2, Save } from "lucide-react";
 import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Input, NativeSelect } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { RwandaLocationFields } from "@/components/ui/rwanda-location-fields";
@@ -231,18 +231,13 @@ export function ProfileForm({
 
               <Field id="gender" label={field.gender} error={errors.gender}>
                 {(props) => (
-                  <select
-                    name="gender"
-                    defaultValue={profile.gender}
-                    className="h-12 w-full rounded-xl border border-border bg-surface px-4 text-[15px] text-ink focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    {...props}
-                  >
+                  <NativeSelect name="gender" defaultValue={profile.gender} {...props}>
                     {genders.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                 )}
               </Field>
             </div>

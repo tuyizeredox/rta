@@ -7,8 +7,10 @@ import {
   BarChart3,
   Bell,
   Building2,
+  CalendarCheck,
   ClipboardList,
   Cog,
+  Coins,
   CreditCard,
   FileText,
   FileUp,
@@ -19,7 +21,10 @@ import {
   PiggyBank,
   QrCode,
   IdCard,
+  Landmark,
+  Scale,
   ScrollText,
+  Sprout,
   Settings,
   ShieldCheck,
   ShieldQuestion,
@@ -69,6 +74,32 @@ const MEMBER_NAV: NavSection[] = [
   {
     items: [
       { labelKey: "overview", href: "/dashboard", icon: LayoutDashboard, exact: true },
+    ],
+  },
+  // Second from the top, above the member's own savings, and carrying no
+  // permission. What the association holds, owes and earned is not privileged
+  // information that members are granted sight of — it is their money, and
+  // burying it under "Account" would say the opposite.
+  {
+    titleKey: "ourAssociation",
+    items: [
+      {
+        labelKey: "ourMoney",
+        href: "/dashboard/association",
+        icon: Landmark,
+        exact: true,
+      },
+      // Beside "our money", and above the member's own savings, for the same
+      // reason: the rules are what a member is held to, not a reference
+      // document filed under settings. This is also where they see how far
+      // behind they are and what a fine would cost, so burying it would mean
+      // the first they hear of a rule is the day it catches them.
+      {
+        labelKey: "ourRules",
+        href: "/dashboard/rules",
+        icon: Scale,
+        exact: true,
+      },
     ],
   },
   {
@@ -251,9 +282,52 @@ const ADMIN_NAV: NavSection[] = [
       },
     ],
   },
+  // Ahead of the association section: the rulebook decides what every other
+  // screen in this list does, and the arrears list is the one an officer needs
+  // to open daily rather than monthly.
+  {
+    titleKey: "rulesAndDiscipline",
+    items: [
+      {
+        labelKey: "rulebook",
+        href: "/admin/rules",
+        icon: Scale,
+        permission: PERMISSIONS.RULES_MANAGE,
+        exact: true,
+      },
+      {
+        labelKey: "contributionStanding",
+        href: "/admin/compliance",
+        icon: CalendarCheck,
+        permission: PERMISSIONS.COMPLIANCE_VIEW,
+        exact: true,
+      },
+      {
+        labelKey: "fundsSeparation",
+        href: "/admin/funds",
+        icon: Coins,
+        permission: PERMISSIONS.PLATFORM_FEES_VIEW,
+        exact: true,
+      },
+    ],
+  },
   {
     titleKey: "association",
     items: [
+      {
+        labelKey: "borrowings",
+        href: "/admin/borrowings",
+        icon: Landmark,
+        permission: PERMISSIONS.BORROWINGS_VIEW,
+        exact: true,
+      },
+      {
+        labelKey: "investments",
+        href: "/admin/investments",
+        icon: Sprout,
+        permission: PERMISSIONS.INVESTMENTS_VIEW,
+        exact: true,
+      },
       {
         labelKey: "reports",
         href: "/admin/reports",
@@ -398,6 +472,9 @@ export const BREADCRUMB_LABELS: Record<string, string> = {
   integrations: "Integrations",
   jobs: "Background jobs",
   apply: "New application",
+  association: "Our association",
+  borrowings: "Bank borrowing",
+  investments: "Investments",
   deposit: "Make a deposit",
   account: "Account",
   status: "Account status",
